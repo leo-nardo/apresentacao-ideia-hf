@@ -1,0 +1,903 @@
+<title>Do Dado à Decisão</title>
+<meta name="description" content="Aula expositiva scrollytelling: Indústria 4.0 e gestão no agronegócio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Conceito de layout: palco fixo (sticky) por cena; o scroll é a linha do tempo. Um "fio de dados" laranja liga todas as cenas.
+   Estética: cartografia técnica de campo, papel frio + azul-petróleo + laranja; abertura e fechamento em modo noite. */
+:root{
+  --papel:#e9eeea; --papel-2:#dbe4de; --tinta:#0b1c26; --mudo:#4c5f6a;
+  --petroleo:#0e4a66; --azul:#1d6f94; --laranja:#e85d12; --laranja-c:#ffb27a;
+  --noite:#07141c; --noite-2:#102836; --linha:rgba(11,28,38,.16); --linha-n:rgba(233,238,234,.18);
+  --verde:#2e7d4f; --alerta:#c62f25; --ouro:#f2c230;
+  --f-disp:'Bricolage Grotesque','Arial Narrow',system-ui,sans-serif;
+  --f-txt:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --gx:clamp(44px,6vw,96px);
+}
+*{box-sizing:border-box}
+html{background:var(--papel);color-scheme:light}
+body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--f-txt);font-size:16px;line-height:1.5;overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:48px;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));background:rgba(233,238,234,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--linha);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta);transition:background .4s,color .4s,border-color .4s}
+#hud.dark{background:rgba(7,20,28,.78);color:var(--papel);border-color:var(--linha-n)}
+#hud .brand b{color:var(--laranja)}
+#dots{display:flex;gap:6px;align-items:center}
+#dots button{width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;background:transparent;padding:0;opacity:.5;transition:all .25s}
+#dots button.on{background:var(--laranja);border-color:var(--laranja);opacity:1;transform:scale(1.25)}
+.hud-r{display:flex;gap:10px;align-items:center}
+.hud-r button{border:1px solid currentColor;background:transparent;border-radius:6px;padding:3px 8px;font:inherit;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+#timer{font-variant-numeric:tabular-nums;min-width:4.2em;text-align:center}
+@media(max-width:760px){#dots{display:none}.brand span{display:none}}
+
+/* Fio de dados global */
+#thread{position:fixed;left:14px;top:48px;bottom:0;width:6px;z-index:40;pointer-events:none}
+#thread i{position:absolute;left:2px;top:0;bottom:0;width:2px;background:var(--linha);border-radius:2px}
+#thread.dark i{background:var(--linha-n)}
+#thread u{position:absolute;left:2px;top:0;width:2px;height:0;background:var(--laranja);border-radius:2px;box-shadow:0 0 8px var(--laranja)}
+#thread s{position:absolute;left:-1px;width:8px;height:8px;border-radius:50%;background:var(--papel);border:2px solid var(--laranja);transform:translateY(-50%)}
+#thread.dark s{background:var(--noite)}
+#thread s.done{background:var(--laranja)}
+
+/* Palcos */
+.scene{position:relative}
+.stage{position:sticky;top:0;height:100vh;height:100dvh;overflow:hidden;padding-top:48px;
+  background:
+    linear-gradient(var(--linha) 1px,transparent 1px) 0 0/64px 64px,
+    linear-gradient(90deg,var(--linha) 1px,transparent 1px) 0 0/64px 64px,
+    var(--papel);
+  background-blend-mode:normal}
+.stage{background-image:linear-gradient(rgba(11,28,38,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(11,28,38,.06) 1px,transparent 1px)}
+.stage{background-size:64px 64px,64px 64px;background-color:var(--papel)}
+.dark .stage{background-color:var(--noite);background-image:linear-gradient(rgba(233,238,234,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(233,238,234,.05) 1px,transparent 1px);color:var(--papel)}
+.stage>svg.full{position:absolute;inset:48px 0 0 0;width:100%;height:calc(100% - 48px);overflow:visible}
+
+.kicker{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--laranja);font-weight:600}
+.dark .kicker{color:var(--laranja-c)}
+h1,h2,h3{font-family:var(--f-disp);margin:0;line-height:1.05;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,2.7vw,2.4rem);font-weight:700}
+.cap{position:absolute;left:var(--gx);bottom:max(28px,env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - var(--gx) - 16px));padding:16px 20px 14px;background:rgba(233,238,234,.9);backdrop-filter:blur(8px);border:1px solid var(--linha);border-radius:14px;box-shadow:0 14px 40px rgba(11,28,38,.14);z-index:5}
+.dark .cap{background:rgba(7,20,28,.78);border-color:var(--linha-n);box-shadow:none}
+.cap p{margin:8px 0 0;font-size:.98rem;color:var(--tinta)}
+.dark .cap p{color:#cfdcd8}
+.cap .src{display:block;margin-top:8px;font-family:var(--f-mono);font-size:.68rem;color:var(--mudo);letter-spacing:.03em}
+.dark .cap .src{color:#8fa6b0}
+.cap h2{margin-top:6px}
+.fade{transition:opacity .35s ease,transform .35s ease}
+.fade.out{opacity:0;transform:translateY(8px)}
+.swap{display:grid}.swap>*{grid-area:1/1}
+.mono{font-family:var(--f-mono)}
+.ill{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mudo)}
+
+/* Cena 0 */
+.big39{font-family:var(--f-disp);font-weight:800;font-size:clamp(7rem,26vw,20rem);line-height:.8;letter-spacing:-.05em;display:inline-flex;align-items:flex-start;gap:.04em;transform-origin:50% 50%}
+.big39 .n{display:block;animation:beat 1.15s ease-in-out infinite;text-shadow:0 0 60px rgba(232,93,18,.35)}
+.big39 small{font-size:.3em;font-weight:500;letter-spacing:0;margin-top:.12em;color:var(--laranja-c)}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.045)}24%{transform:scale(1)}36%{transform:scale(1.025)}50%{transform:scale(1)}}
+.s0-wrap{position:absolute;inset:48px 0 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 var(--gx);gap:clamp(10px,2vh,22px);z-index:2}
+.s0-wrap h1{font-size:clamp(1.7rem,4vw,3.4rem);font-weight:800;max-width:18ch}
+.s0-wrap p{margin:0;color:#b9cbd1;font-size:clamp(1rem,1.6vw,1.3rem);max-width:46ch}
+.ecg{position:absolute;left:0;right:0;top:50%;width:100%;height:30vh;transform:translateY(-50%);opacity:.55;z-index:1}
+.ecg path{fill:none;stroke:var(--laranja);stroke-width:3;stroke-linejoin:round;stroke-dasharray:420 1180;animation:ecg 2.4s linear infinite;filter:drop-shadow(0 0 6px var(--laranja))}
+@keyframes ecg{to{stroke-dashoffset:-1600}}
+.scrollhint{position:absolute;bottom:max(22px,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#8fa6b0;animation:bob 2s ease-in-out infinite;z-index:3;white-space:nowrap}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+
+/* Cena 1 */
+.mask{position:absolute;inset:0;overflow:hidden}
+.mask svg{position:absolute;right:0;top:48px;height:calc(100% - 48px);width:min(60vw,100vh);max-width:60%}
+.m0{background:#7b1d18}.m1{background:#1f5f3c;clip-path:circle(0% at 24% 42%)}.m2{background:#8a5a12;clip-path:circle(0% at 24% 42%)}
+.s1-num{position:absolute;left:24%;top:42%;transform:translate(-50%,-50%);color:#fff;z-index:4;text-align:center}
+.s1-num .big39{font-size:clamp(5rem,17vw,13rem)}
+.s1-name{position:absolute;left:24%;top:calc(42% + clamp(3.2rem,9vw,7rem));transform:translateX(-50%);z-index:4;color:#fff;font-family:var(--f-mono);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.28);padding:6px 12px;border-radius:99px;white-space:nowrap}
+.chain{position:absolute;left:var(--gx);right:16px;bottom:max(70px,calc(env(safe-area-inset-bottom,0px) + 70px));display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;z-index:5}
+.chip{background:rgba(255,255,255,.94);color:var(--tinta);border-radius:12px;padding:10px 14px;min-width:150px;flex:1 1 150px;max-width:260px;border-top:4px solid var(--petroleo);transition:opacity .3s,transform .3s}
+.chip small{display:block;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mudo)}
+.chip strong{display:block;font-size:1rem;margin-top:2px;line-height:1.2}
+.chip.hl{border-top-color:var(--laranja);background:#fff4e9}
+.chain .op{align-self:center;color:#fff;font-weight:800;font-size:1.3rem}
+.ctxtabs{position:absolute;left:var(--gx);bottom:max(18px,env(safe-area-inset-bottom,0px));display:flex;gap:8px;z-index:6;flex-wrap:wrap}
+.ctxtabs button{border:1.5px solid rgba(255,255,255,.7);background:rgba(0,0,0,.25);color:#fff;border-radius:99px;padding:5px 14px;font-size:.82rem;font-weight:600}
+.ctxtabs button.on{background:#fff;color:var(--tinta)}
+.s1-title{position:absolute;left:var(--gx);top:calc(48px + clamp(14px,3vh,30px));z-index:4;color:#fff;max-width:min(520px,calc(100% - var(--gx) - 16px))}
+.s1-title .kicker{color:#ffd9b3}
+.s1-title h2{margin-top:6px;text-shadow:0 2px 20px rgba(0,0,0,.25)}
+
+/* Cena 2 */
+.s2-head{position:absolute;left:var(--gx);top:calc(48px + clamp(14px,3vh,30px));z-index:6;max-width:min(560px,calc(100% - var(--gx) - 16px))}
+.s2-head h2{margin-top:6px}
+#track{position:absolute;top:48px;bottom:0;left:0;display:flex;width:500vw;will-change:transform}
+.panel{width:100vw;height:100%;padding:clamp(120px,19vh,170px) var(--gx) clamp(70px,10vh,90px);display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(16px,3vw,48px);align-items:center}
+.panel .era{font-family:var(--f-disp);font-weight:800;font-size:clamp(3.4rem,9vw,7.5rem);line-height:.85;color:var(--petroleo);letter-spacing:-.04em}
+.panel.p4 .era{color:var(--laranja)}
+.panel h3{font-size:clamp(1.3rem,2.4vw,2rem);margin:10px 0 8px}
+.panel p{margin:0;color:var(--mudo);max-width:40ch;font-size:1.02rem}
+.panel .tag{display:inline-block;margin-top:14px;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:99px;border:1.5px solid currentColor}
+.panel .art{width:100%;max-height:100%}
+.panel .art svg{width:100%;height:auto;max-height:52vh;display:block;overflow:visible}
+#rail{position:absolute;left:var(--gx);bottom:max(26px,env(safe-area-inset-bottom,0px));display:flex;gap:6px;z-index:6;flex-wrap:wrap}
+#rail span{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;padding:4px 10px;border-radius:99px;border:1.5px solid var(--linha);color:var(--mudo);background:var(--papel);transition:all .3s}
+#rail span.on{background:var(--petroleo);border-color:var(--petroleo);color:#fff}
+#rail span.on.last{background:var(--laranja);border-color:var(--laranja)}
+@media(max-width:820px){.panel{grid-template-columns:1fr;align-content:center;padding-top:130px;gap:8px}.panel p{font-size:.92rem}.panel .art svg{max-height:34vh}}
+
+/* Cena 3 */
+.stops{position:absolute;right:16px;top:calc(48px + 14px);display:flex;gap:6px;z-index:6;align-items:center;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mudo)}
+.stops b{width:26px;height:6px;border-radius:3px;background:var(--linha);transition:background .3s}
+.stops b.on{background:var(--laranja)}
+.cap .tagrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:rgba(14,74,102,.1);color:var(--petroleo)}
+.dark .pill{background:rgba(255,178,122,.14);color:var(--laranja-c)}
+
+/* Cena ilha / servitização */
+.s4-top{position:absolute;left:var(--gx);top:calc(48px + clamp(14px,3vh,30px));z-index:6;display:flex;gap:10px;flex-wrap:wrap;align-items:center;right:16px}
+.price{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:10px;border:1.5px solid var(--linha);background:var(--papel);transition:all .4s}
+.price.on{background:var(--petroleo);border-color:var(--petroleo);color:#fff}
+.price.on.new{background:var(--laranja);border-color:var(--laranja)}
+.layer{display:flex;gap:6px;margin-left:auto}
+.layer button{border:1.5px solid var(--petroleo);background:var(--papel);color:var(--petroleo);border-radius:99px;padding:5px 14px;font-size:.82rem;font-weight:600}
+.layer button.on{background:var(--petroleo);color:#fff}
+#cv4{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:min(92vw,1150px);height:min(54vh,520px)}
+.rx{position:absolute;right:16px;bottom:max(28px,env(safe-area-inset-bottom,0px));width:min(320px,calc(100vw - 32px));background:var(--tinta);color:var(--papel);border-radius:14px;padding:14px 16px;z-index:6;font-size:.9rem;transition:opacity .4s,transform .4s}
+.rx b{display:block;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--laranja-c);margin-bottom:4px}
+@media(max-width:900px){.rx{display:none}}
+
+/* Cena 5 */
+.s5{position:absolute;inset:48px 0 0 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,3vw,48px);padding:clamp(18px,4vh,40px) var(--gx) clamp(20px,4vh,36px);align-items:center}
+.s5 h2{margin:8px 0 14px;font-size:clamp(1.25rem,2.1vw,1.85rem)}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;padding:12px 16px;border-radius:12px;border:2px solid var(--linha);background:var(--papel);transition:all .2s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.opt i{font-style:normal;font-family:var(--f-disp);font-weight:800;font-size:1.5rem;color:var(--petroleo);line-height:1}
+.opt strong{display:block;font-size:.98rem}.opt span{font-size:.86rem;color:var(--mudo)}
+.opt:hover{border-color:var(--petroleo)}
+.opt.sel{border-color:var(--petroleo);background:#dcebf2}
+.opt.sel.bad{border-color:var(--alerta);background:#f8e1de}.opt.sel.good{border-color:var(--verde);background:#dff0e5}
+.fb{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:.92rem;border-left:5px solid var(--linha);background:var(--papel-2);min-height:3.4em}
+.fb.bad{border-color:var(--alerta);background:#f8e1de}.fb.good{border-color:var(--verde);background:#dff0e5}
+.vizbox{background:var(--papel-2);border:1px solid var(--linha);border-radius:18px;padding:8px;min-width:0}
+.vizbox svg{display:block;width:100%;height:auto;max-height:64vh}
+.hintpick{font-family:var(--f-mono);font-size:.7rem;color:var(--mudo);letter-spacing:.08em;text-transform:uppercase;margin-top:10px}
+@media(max-width:900px){.s5{grid-template-columns:1fr;overflow-y:auto;align-content:start}.vizbox{order:-1}.vizbox svg{max-height:28vh}}
+
+/* Cena 6 */
+.s6{position:absolute;inset:48px 0 0 0;display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2.4vh,22px);padding:clamp(14px,3vh,28px) var(--gx)}
+.roof{background:var(--petroleo);color:#fff;border-radius:14px 14px 4px 4px;padding:14px 22px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;font-family:var(--f-disp);font-weight:700;font-size:clamp(1.2rem,2.3vw,1.9rem);clip-path:polygon(2.5% 0,97.5% 0,100% 100%,0 100%);padding-left:5%;padding-right:5%}
+.roof small{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--laranja-c);font-weight:500}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,2vw,26px)}
+.col{background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:14px 16px;box-shadow:0 10px 30px rgba(11,28,38,.08)}
+.col svg{width:100%;height:auto;max-height:26vh;display:block}
+.col h3{font-size:clamp(1.05rem,1.7vw,1.4rem);margin:8px 0 4px;color:var(--petroleo)}
+.col p{margin:0;color:var(--mudo);font-size:.92rem}
+.col .src{font-family:var(--f-mono);font-size:.66rem;color:var(--mudo);margin-top:6px;display:block}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.col svg{max-height:12vh}.col p{display:none}.s6{overflow-y:auto;justify-content:flex-start}}
+
+/* Quiz (fluxo normal) */
+#quiz{min-height:100vh;padding:calc(48px + 64px) var(--gx) 80px;background:var(--papel)}
+#quiz h2{margin:8px 0 6px}
+#quiz>p{color:var(--mudo);margin:0 0 28px;max-width:60ch}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.qcard{position:relative;border:1.5px solid var(--petroleo);background:var(--papel);border-radius:14px;padding:20px;text-align:left;min-height:210px;display:flex;flex-direction:column;gap:12px;transition:background .3s,color .3s}
+.qcard .q{font-family:var(--f-disp);font-weight:700;font-size:1.25rem;line-height:1.2}
+.qcard .a{display:none;font-size:.98rem}
+.qcard .hint{margin-top:auto;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--laranja)}
+.qcard.open{background:var(--petroleo);color:#fff}.qcard.open .a{display:block}.qcard.open .hint{display:none}.qcard.open .q{color:var(--laranja-c);font-size:1rem}
+
+/* Cena 7 */
+.s7{position:absolute;inset:48px 0 0 0;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:0 var(--gx) 20vh}
+.orbit{position:absolute;left:50%;top:41%;width:0;height:0}
+.orbit .it{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;padding:7px 12px;border-radius:99px;border:1.5px solid var(--laranja);background:rgba(7,20,28,.85);color:var(--laranja-c)}
+#ring{position:absolute;left:50%;top:41%;transform:translate(-50%,-50%);width:min(66vw,64vh);height:min(66vw,64vh);overflow:visible}
+.s7-core{position:relative;z-index:2;margin-top:-6vh}
+.s7-core .big39{font-size:clamp(5rem,16vw,12rem)}
+.s7-sub{font-family:var(--f-mono);font-size:clamp(.8rem,1.3vw,1rem);letter-spacing:.16em;text-transform:uppercase;color:var(--laranja-c);margin-top:10px;min-height:1.6em}
+.quote{position:absolute;left:var(--gx);right:16px;bottom:max(76px,calc(env(safe-area-inset-bottom,0px) + 76px));text-align:center;font-family:var(--f-disp);font-weight:700;font-size:clamp(1.15rem,2.4vw,1.9rem);line-height:1.2;color:#ffe2c8;z-index:3;min-height:3.6em}
+.foot{position:absolute;left:var(--gx);right:16px;bottom:max(18px,env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.04em;color:#8fa6b0;z-index:3}
+
+/* Notas do apresentador */
+#notes{position:fixed;right:16px;bottom:16px;width:min(380px,calc(100vw - 32px));max-height:50vh;overflow:auto;background:var(--tinta);color:var(--papel);border-radius:14px;padding:16px 18px;z-index:60;box-shadow:0 20px 60px rgba(0,0,0,.4);font-size:.92rem}
+#notes b{display:block;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--laranja-c);margin-bottom:6px}
+#notes p{margin:6px 0}
+#notes .keys{font-family:var(--f-mono);font-size:.7rem;color:#8fa6b0;margin-top:10px}
+
+@media(prefers-reduced-motion:reduce){.big39 .n,.ecg path,.scrollhint{animation:none}.fade{transition:none}}
+</style>
+
+<!-- símbolos reutilizáveis -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="cow" viewBox="0 0 400 260">
+  <g fill="currentColor">
+    <path d="M70 88 q-42 10 -38 92" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="30" cy="186" rx="9" ry="16"/>
+    <rect x="88" y="150" width="24" height="92" rx="9"/><rect x="128" y="150" width="24" height="92" rx="9"/>
+    <rect x="232" y="150" width="24" height="92" rx="9"/><rect x="272" y="150" width="24" height="92" rx="9"/>
+    <rect x="62" y="62" width="240" height="116" rx="52"/>
+    <ellipse cx="250" cy="64" rx="36" ry="26"/>
+    <path d="M280 72 L340 54 Q392 60 396 110 Q398 140 366 144 L330 144 Q296 142 284 126 Z"/>
+    <ellipse cx="318" cy="62" rx="26" ry="11" transform="rotate(-28 318 62)"/>
+    <path d="M326 54 q-4 -26 12 -34" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g fill="rgba(0,0,0,.22)"><ellipse cx="130" cy="104" rx="34" ry="22"/><ellipse cx="222" cy="142" rx="26" ry="18"/></g>
+  <ellipse cx="382" cy="120" rx="16" ry="14" fill="rgba(255,255,255,.35)"/>
+  <circle cx="350" cy="90" r="5" fill="#0b1c26"/>
+  <circle cx="388" cy="118" r="2.5" fill="#0b1c26"/>
+  <rect x="308" y="72" width="16" height="22" rx="4" fill="#f2c230" stroke="#0b1c26" stroke-width="2"/>
+</symbol></defs></svg>
+
+<header id="hud">
+  <div class="brand"><b>Indústria 4.0</b> <span>· do dado à decisão</span></div>
+  <nav id="dots" aria-label="Cenas"></nav>
+  <div class="hud-r"><button id="notesBtn" type="button" title="Notas do apresentador (P)">Notas</button><button id="timer" type="button" title="Clique para iniciar ou pausar o cronômetro">00:00</button></div>
+</header>
+<div id="thread" aria-hidden="true"><i></i><u></u></div>
+<aside id="notes" hidden></aside>
+
+<main>
+<!-- ═════════ CENA 0 · PULSO ═════════ -->
+<section class="scene dark" id="s0" data-h="260">
+  <div class="stage">
+    <svg class="ecg" viewBox="0 0 1600 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0 100 H520 l24 0 l18 -26 l26 110 l30 -150 l26 100 l18 -34 l30 0 H1600"/></svg>
+    <div class="s0-wrap">
+      <div class="kicker">Aula expositiva · Gestão · SENAI CETEC Palmas</div>
+      <div class="big39" id="big39"><span class="n">39</span><small>°C</small></div>
+      <div class="swap">
+        <h1 id="s0a">Um número isolado não é gestão.</h1>
+        <h1 id="s0b" style="opacity:0">Depende de quem está com ele.</h1>
+      </div>
+      <p>Esse número é bom ou ruim?</p>
+    </div>
+    <div class="scrollhint">role ↓ ou use a seta →</div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 1 · TRÊS MÁSCARAS ═════════ -->
+<section class="scene" id="s1" data-h="440">
+  <div class="stage">
+    <div class="mask m0"><svg viewBox="0 0 600 600" aria-hidden="true">
+      <g id="heat" fill="none" stroke="#ffb27a" stroke-width="5" stroke-linecap="round" opacity=".6"><path d="M250 100 q-14 -20 0 -40 q14 -20 0 -40"/><path d="M300 90 q-14 -20 0 -40 q14 -20 0 -40"/><path d="M350 100 q-14 -20 0 -40 q14 -20 0 -40"/></g>
+      <circle cx="300" cy="210" r="76" fill="#f3c9a8"/><path d="M118 560 Q118 350 300 350 Q482 350 482 560 Z" fill="#f3c9a8"/>
+      <path d="M268 226 q32 -14 64 0" stroke="#7b1d18" stroke-width="6" fill="none" stroke-linecap="round" opacity=".7"/><circle cx="274" cy="190" r="6" fill="#7b1d18"/><circle cx="326" cy="190" r="6" fill="#7b1d18"/>
+      <rect x="496" y="140" width="30" height="290" rx="15" fill="#fff" opacity=".92"/><circle cx="511" cy="452" r="38" fill="#fff" opacity=".92"/>
+      <rect x="503" y="200" width="16" height="250" rx="8" fill="#c62f25"/><circle cx="511" cy="452" r="28" fill="#c62f25"/>
+      <g stroke="#7b1d18" stroke-width="3"><path d="M530 180h18M530 220h12M530 260h18M530 300h12M530 340h18"/></g>
+    </svg></div>
+    <div class="mask m1" id="m1"><svg viewBox="0 0 600 600" aria-hidden="true">
+      <ellipse cx="300" cy="540" rx="280" ry="40" fill="#164a2e"/>
+      <use href="#cow" x="20" y="190" width="560" height="364" style="color:#d9d3c4"/>
+      <g fill="none" stroke="#ffd25a" stroke-width="4" opacity=".85"><circle cx="372" cy="296" r="30"/><circle cx="372" cy="296" r="52" opacity=".6"/><circle cx="372" cy="296" r="74" opacity=".35"/></g>
+    </svg></div>
+    <div class="mask m2" id="m2"><svg viewBox="0 0 600 600" aria-hidden="true">
+      <rect x="205" y="210" width="190" height="320" fill="#d8d2c4"/><path d="M205 210 Q300 90 395 210 Z" fill="#c9c2b0"/>
+      <g stroke="#8a5a12" stroke-width="3" opacity=".5"><path d="M205 270H395M205 330H395M205 390H395M205 450H395"/></g>
+      <rect x="205" y="500" width="190" height="30" fill="#8a5a12" opacity=".5"/>
+      <path d="M180 530 L215 530 L205 560 L170 560Z M385 530 L420 530 L430 560 L395 560Z" fill="#6e4709"/>
+      <rect x="296" y="120" width="8" height="300" fill="#0b1c26"/><circle cx="300" cy="400" r="14" fill="#e85d12"/>
+      <g fill="none" stroke="#e85d12" stroke-width="4" stroke-linecap="round"><path d="M270 372 q30 -26 60 0"/><path d="M252 352 q48 -42 96 0"/></g>
+      <path d="M300 120 l0 -30" stroke="#d8d2c4" stroke-width="8"/>
+    </svg></div>
+    <div class="s1-title"><div class="kicker">Ato 1 · O ponto de partida</div><h2>O mesmo dado, três mundos.</h2></div>
+    <div class="s1-num"><div class="big39"><span class="n">39</span><small>°C</small></div></div>
+    <div class="s1-name" id="ctxName">Corpo humano</div>
+    <div class="chain" id="chain">
+      <div class="chip"><small>Dado bruto</small><strong>39 °C</strong></div><div class="op">+</div>
+      <div class="chip"><small>Contexto</small><strong data-k="ctx">Corpo humano</strong></div><div class="op">→</div>
+      <div class="chip"><small>Informação</small><strong data-k="info">Estado febril</strong></div><div class="op">→</div>
+      <div class="chip hl"><small>Decisão de gestão</small><strong data-k="dec">Intervir e medicar</strong></div>
+    </div>
+    <div class="ctxtabs"><button type="button" data-i="0" class="on">Corpo humano</button><button type="button" data-i="1">Brinco eletrônico</button><button type="button" data-i="2">Silo de grãos</button></div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 2 · DAS ILHAS À REDE ═════════ -->
+<section class="scene" id="s2" data-h="580">
+  <div class="stage">
+    <div class="s2-head"><div class="kicker">Ato 2 · Evolução dos sistemas produtivos</div><h2>Da automação à Indústria 4.0</h2></div>
+    <div id="track">
+      <div class="panel p0"><div><div class="era">1.0</div><h3>Mecanização</h3><p>Final do séc. XVIII. Máquina a vapor e força mecânica substituindo o trabalho artesanal.</p></div><div class="art" data-art="0"></div></div>
+      <div class="panel p1"><div><div class="era">2.0</div><h3>Eletricidade e escala</h3><p>Final do séc. XIX. Linhas de montagem e produção em massa padronizada.</p></div><div class="art" data-art="1"></div></div>
+      <div class="panel p2"><div><div class="era">3.0</div><h3>Automação</h3><p>Anos 1970. Eletrônica, CLPs e computadores automatizando etapas isoladas da fábrica.</p><span class="tag" style="color:var(--alerta)">Ilhas que não conversam</span></div><div class="art" data-art="2"></div></div>
+      <div class="panel p3 p4"><div><div class="era">4.0</div><h3>Sistemas ciberfísicos</h3><p>Hannover, 2011. Máquinas, sensores e redes conectados: o processo enxerga, comunica e apoia decisões.</p><span class="tag" style="color:var(--laranja)">Tudo conectado</span></div><div class="art" data-art="3"></div></div>
+      <div class="panel p5"><div><div class="era" style="font-size:clamp(2.2rem,5vw,4rem);line-height:1">4 degraus</div><h3>Maturidade na gestão de dados</h3><p>Transparência, visualização, apoio à decisão e autonomia. Cada degrau só funciona se o anterior estiver firme.</p></div><div class="art" data-art="4"></div></div>
+    </div>
+    <div id="rail"><span>1.0 Mecanização</span><span>2.0 Escala</span><span>3.0 Automação</span><span class="last">4.0 Ciberfísico</span><span class="last">Maturidade</span></div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 3 · A VIDA DO BOI 039 ═════════ -->
+<section class="scene" id="s3" data-h="1000">
+  <div class="stage" id="stage3">
+    <svg class="full" id="svg3" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-label="A jornada do Boi 039, do pasto ao prato"><g id="world"></g></svg>
+    <div class="stops" id="stops"><span>Parada</span></div>
+    <div class="cap fade" id="cap3"><div class="tagrow"><span class="kicker" id="c3k"></span><span class="pill">Caso 1 · Tocantins</span></div><h2 id="c3h"></h2><p id="c3p"></p><span class="src">Fontes: Deloitte Brasil (2021), docs. aos 17:00 e 22:44 · Apostila SENAI. Valores nos cartões são exemplos ilustrativos.</span></div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 3b · ILHA 4.0 ═════════ -->
+<section class="scene dark" id="s3b" data-h="360">
+  <div class="stage">
+    <svg class="full" id="svgI" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-label="Fábrica conectada e campo no papel"></svg>
+    <div class="cap fade" id="capI"><div class="tagrow"><span class="kicker">Alerta de gestão</span></div><h2 id="ciH"></h2><p id="ciP"></p><span class="src">Fontes: Deloitte Brasil (2021) · Apostila SENAI (integração horizontal)</span></div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 4 · SERVITIZAÇÃO ═════════ -->
+<section class="scene" id="s4" data-h="500">
+  <div class="stage">
+    <div class="s4-top">
+      <span class="price on" id="pr0">Modelo tradicional · vende a máquina</span>
+      <span class="price new" id="pr1">Modelo 4.0 · vende hectare produtivo</span>
+      <div class="layer" id="layer"><button type="button" class="on" data-l="0">Água</button><button type="button" data-l="1">Nitrogênio</button></div>
+    </div>
+    <canvas id="cv4" aria-label="Trator que se dissolve em mapa de talhão"></canvas>
+    <div class="rx fade" id="rx" style="opacity:0"><b>Prescrição de manejo · exemplo ilustrativo</b>O quadrante em destaque está com maior déficit. Irrigar e repor nitrogênio só nessa zona, não no talhão inteiro.</div>
+    <div class="cap fade" id="cap4"><div class="tagrow"><span class="kicker">Ato 4 · Caso 2</span></div><h2 id="c4h"></h2><p id="c4p"></p><span class="src">Fontes: Deloitte Brasil (2021), doc. aos 15:34 · IEDI (2017)</span></div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 5 · DECISÃO ═════════ -->
+<section class="scene" id="s5" data-h="320">
+  <div class="stage">
+    <div class="s5">
+      <div>
+        <div class="kicker">Dinâmica de gestão · decisão da diretoria</div>
+        <h2>Metade das fazendas tem sinal instável e a equipe ainda usa planilhas. Qual é a decisão prioritária?</h2>
+        <div class="opts" id="opts">
+          <button class="opt" type="button" data-o="A"><i>A</i><div><strong>Comprar IA e sensores de ponta</strong><span>Instalar sensores em tempo real em toda a frota para automatizar tudo.</span></div></button>
+          <button class="opt" type="button" data-o="B"><i>B</i><div><strong>Padronizar processo + coleta offline</strong><span>Organizar o registro, capacitar a equipe e sincronizar quando houver rede.</span></div></button>
+          <button class="opt" type="button" data-o="C"><i>C</i><div><strong>Manter só controle manual</strong><span>Adiar a tecnologia até que 100% da região tenha 5G estável.</span></div></button>
+        </div>
+        <div class="fb" id="fb">Escolha uma opção (clique ou tecle 1, 2, 3) e veja a consequência acontecer.</div>
+        <div class="hintpick">Fontes: Deloitte Brasil (2021), 15:34 · IEDI (2017)</div>
+      </div>
+      <div class="vizbox"><svg id="viz" viewBox="0 0 800 500" aria-label="Consequência da decisão escolhida"></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ CENA 6 · PILARES ═════════ -->
+<section class="scene" id="s6" data-h="480">
+  <div class="stage">
+    <div class="s6">
+      <div><div class="kicker">Ato 5 · Governança</div></div>
+      <div class="roof" id="roof"><span>Competitividade sustentável</span><small>tecnologia é meio, não fim</small></div>
+      <div class="cols">
+        <div class="col" id="col0"><svg viewBox="0 0 300 150" id="v0" aria-hidden="true"></svg><h3>1. Processo antes do software</h3><p>Sem padrão de registro e metas claras (indicadores antes e depois), o sistema vira custo sem retorno.</p><span class="src">IEDI (2017)</span></div>
+        <div class="col" id="col1"><svg viewBox="0 0 300 150" id="v1" aria-hidden="true"></svg><h3>2. Cibersegurança (TI + TO)</h3><p>Conectar máquinas e cadeias à rede exige proteção contra invasões, sequestro de dados e paradas operacionais.</p></div>
+        <div class="col" id="col2"><svg viewBox="0 0 300 150" id="v2" aria-hidden="true"></svg><h3>3. Pessoas e requalificação</h3><p>A automação absorve o repetitivo e desloca o ser humano para análise, supervisão e decisão.</p><span class="src">SENAI</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Verificação rápida (fluxo normal) -->
+<section id="quiz">
+  <div class="kicker">Verificação rápida da aprendizagem</div>
+  <h2>Clique no cartão para ver a resposta esperada</h2>
+  <p>Três perguntas para a banca, na ordem em que o conteúdo apareceu.</p>
+  <div class="qgrid">
+    <button type="button" class="qcard"><span class="q">Qual a diferença entre coletar um dado e tomar uma decisão 4.0?</span><span class="a">O dado isolado (temperatura, peso) só vira informação quando cruzado com contexto (lote, histórico, meta), o que permite agir de forma preventiva.</span><span class="hint">ver resposta</span></button>
+    <button type="button" class="qcard"><span class="q">O que significa evitar uma "Ilha 4.0" na agroindústria?</span><span class="a">Integrar toda a cadeia (produtor, logística, indústria e cliente), e não apenas automatizar dentro dos muros da fábrica.</span><span class="hint">ver resposta</span></button>
+    <button type="button" class="qcard"><span class="q">Por que o fator humano continua decisivo na Indústria 4.0?</span><span class="a">Máquinas executam padrões. Pessoas definem o problema, interpretam exceções, garantem a qualidade do dado e lideram a melhoria contínua.</span><span class="hint">ver resposta</span></button>
+  </div>
+</section>
+
+<!-- ═════════ CENA 7 · RETORNO AO 39 ═════════ -->
+<section class="scene dark" id="s7" data-h="340">
+  <div class="stage">
+    <svg id="ring" viewBox="0 0 400 400" aria-hidden="true"><circle id="ringc" cx="200" cy="200" r="190" fill="none" stroke="#e85d12" stroke-width="1.5" stroke-dasharray="1194" stroke-dashoffset="1194" style="filter:drop-shadow(0 0 6px #e85d12)" transform="rotate(-90 200 200)"/></svg>
+    <div class="orbit" id="orbit"></div>
+    <div class="s7"><div class="s7-core"><div class="big39" id="big39b"><span class="n">39</span><small>°C</small></div><div class="s7-sub" id="s7sub">dado isolado</div></div></div>
+    <div class="quote" id="quote"></div>
+    <div class="foot">Aula expositiva · Processo seletivo Instrutor 3 – Gestão · SENAI CETEC Palmas (Comunicado 25/2026)<br>Fontes: Deloitte Brasil, "Indústria 4.0" (2021) · IEDI (2017) · Apostila SENAI</div>
+  </div>
+</section>
+</main>
+
+<script>
+(()=>{
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const seg=(p,a,b)=>clamp((p-a)/(b-a));
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const easeOut=t=>1-Math.pow(1-t,3);
+const NS='http://www.w3.org/2000/svg';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C={papel:'#e9eeea',tinta:'#0b1c26',petroleo:'#0e4a66',azul:'#1d6f94',laranja:'#e85d12',laranjaC:'#ffb27a',noite:'#07141c',verde:'#2e7d4f',alerta:'#c62f25',ouro:'#f2c230',mudo:'#4c5f6a'};
+let T=0; // tempo em segundos (animações contínuas)
+
+/* ───────── utilidades SVG ───────── */
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;};
+const gearPath=(r,n,d)=>{let pts=[];const w=Math.PI*2/n;for(let i=0;i<n;i++){const a=i*w;[[-.36,r],[-.2,r+d],[.2,r+d],[.36,r]].forEach(([k,rr])=>pts.push([Math.cos(a+k*w)*rr,Math.sin(a+k*w)*rr]));}return 'M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z';};
+const smooth=(a,b)=>{const dx=b[0]-a[0];return `M${a[0]} ${a[1]} C${a[0]+dx*.5} ${a[1]} ${b[0]-dx*.5} ${b[1]} ${b[0]} ${b[1]}`;};
+const rnd=(s=>()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;})(42);
+const hexToRgb=h=>{h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+const mix=(a,b,t)=>`rgb(${a.map((v,i)=>Math.round(lerp(v,b[i],t))).join(',')})`;
+
+/* ───────── cenas e notas ───────── */
+const scenes=[
+ {id:'s0',name:'Pulso',time:'0:00',dark:true,beats:[0,.5,.95],note:'Abra em silêncio, com o 39 pulsando. Pergunte à banca: "Esse número é bom ou ruim?" Deixe a dúvida por alguns segundos. Resposta: depende de quem está com ele. Frase-chave: dado isolado não é gestão.'},
+ {id:'s1',name:'Três máscaras',time:'0:30 – 2:00',beats:[0,.2,.5,.85],note:'Mesmo 39 °C, três mundos: corpo humano (febre, medicar), boi com brinco RFID (normal, manter manejo), silo de grãos (aquecimento, aerar e checar umidade). Monte a cadeia: Dado + Contexto → Informação → Decisão. Confirme a faixa de temperatura crítica do silo por cultura antes da aula.'},
+ {id:'s2',name:'Das ilhas à rede',time:'2:00 – 4:00',beats:[0,.2,.4,.62,.8,.97],note:'Percorra as revoluções rápido (1.0, 2.0). Pare na 3.0: máquinas automatizadas, mas ilhas que não conversam. Na 4.0 as ilhas se ligam (Hannover, 2011): o processo enxerga, comunica e apoia decisões. Feche com os 4 degraus: transparência, visualização, apoio à decisão, autonomia.'},
+ {id:'s3',name:'Boi 039',time:'4:00 – 7:30',beats:[.07,.27,.47,.67,.88],note:'Cena central. Cinco paradas: brinco RFID, balança conectada, satélite (origem limpa x área embargada), frigorífico/SIF, QR code do comprador. Mensagem: rastreabilidade deixou de ser burocracia e virou passaporte de mercado. Os números do cartão são ilustrativos.'},
+ {id:'s3b',name:'Ilha 4.0',time:'~7:00',dark:true,beats:[0,.5,.95],note:'Alerta de gestão: automatizar só o frigorífico cria uma Ilha 4.0. Se o campo opera no papel, a cadeia trava. Integração horizontal liga todos os elos.'},
+ {id:'s4',name:'Servitização',time:'7:30 – 9:00',beats:[0,.25,.55,.85],note:'Do trator ao hectare produtivo: o fabricante deixa de vender só a máquina e passa a vender resultado, com prescrição de manejo por quadrante. Alterne Água e Nitrogênio. Confira o minuto 15:34 do documentário antes da banca.'},
+ {id:'s5',name:'A decisão',time:'9:00 – 11:00',beats:[0,.5,.9],note:'Pergunte à banca qual decisão tomar. A é a armadilha do IEDI (digitalizar o processo desorganizado). B é a decisão consistente: processo, pessoas e coleta offline com sincronização. C é risco competitivo. Teclas 1, 2 e 3 escolhem.'},
+ {id:'s6',name:'Três pilares',time:'11:00 – 14:15',beats:[0,.25,.5,.75,.95],note:'Processo antes do software, cibersegurança (TI + TO) e pessoas. Depois, a verificação rápida em cartões. Use os cartões para checar a aprendizagem.'},
+ {id:'quiz',name:'Verificação',time:'11:00 – 14:15',beats:[0],flow:true,note:'Três perguntas de verificação. Clique no cartão para revelar a resposta esperada.'},
+ {id:'s7',name:'Retorno ao 39',time:'14:15 – 15:00',dark:true,beats:[0,.45,.95],note:'Volte aos 39 °C. Agora o número carrega contexto, cadeia e pessoas. Feche com a frase final: a Indústria 4.0 começa pelo problema de gestão que precisamos resolver, não pela tecnologia que compramos.'}
+];
+scenes.forEach(s=>{s.el=document.getElementById(s.id);s.h=+(s.el.dataset.h||0);s.up=()=>{};});
+const S=Object.fromEntries(scenes.map(s=>[s.id,s]));
+
+/* ═══════════════ CENA 0 ═══════════════ */
+{
+  const big=$('#big39'),a=$('#s0a'),b=$('#s0b');
+  S.s0.up=p=>{
+    big.style.transform=`scale(${lerp(1,1.3,easeOut(seg(p,0,.6)))})`;
+    const k=seg(p,.4,.6);a.style.opacity=1-k;a.style.transform=`translateY(${-24*k}px)`;
+    const m=seg(p,.55,.75);b.style.opacity=m;b.style.transform=`translateY(${24*(1-m)}px)`;
+  };
+}
+
+/* ═══════════════ CENA 1 ═══════════════ */
+{
+  const ctx=[
+    {name:'Corpo humano',info:'Estado febril',dec:'Intervir e medicar'},
+    {name:'Boi com brinco RFID',info:'Temperatura normal (38 a 39,5 °C)',dec:'Manter o manejo regular'},
+    {name:'Massa de grãos no silo',info:'Aquecimento da massa de grãos',dec:'Acionar aeração e checar umidade'}];
+  const m1=$('#m1'),m2=$('#m2'),chips=$$('#chain .chip'),ops=$$('#chain .op'),nm=$('#ctxName'),tabs=$$('.ctxtabs button');
+  const els={ctx:$('[data-k=ctx]'),info:$('[data-k=info]'),dec:$('[data-k=dec]')};
+  let cur=-1;
+  S.s1.up=p=>{
+    m1.style.clipPath=`circle(${(150*easeOut(seg(p,.28,.4))).toFixed(1)}% at 24% 42%)`;
+    m2.style.clipPath=`circle(${(150*easeOut(seg(p,.63,.75))).toFixed(1)}% at 24% 42%)`;
+    const idx=p<.34?0:p<.67?1:2;
+    if(idx!==cur){cur=idx;const c=ctx[idx];els.ctx.textContent=c.name;els.info.textContent=c.info;els.dec.textContent=c.dec;nm.textContent=c.name;tabs.forEach((t,i)=>t.classList.toggle('on',i===idx));}
+    const q=(p-(idx===0?0:idx===1?.34:.67))/.33+(idx===0?.3:0);
+    chips.forEach((c,i)=>{const o=seg(q,.12+i*.14,.24+i*.14);c.style.opacity=idx===0&&q<0?1:o;c.style.transform=`translateY(${(1-o)*14}px)`;});
+    ops.forEach((o,i)=>o.style.opacity=seg(q,.12+i*.14,.24+i*.14));
+  };
+  tabs.forEach(t=>t.addEventListener('click',()=>{const i=+t.dataset.i;goTo(S.s1,[.1,.45,.8][i]);}));
+}
+
+/* ═══════════════ CENA 2 ═══════════════ */
+{
+  const track=$('#track'),rail=$$('#rail span');
+  const arts=[...$$('.art')];
+  const BOX=[20,220,420];
+  const islands=(conn)=>{
+    let s=`<svg viewBox="0 0 600 440" aria-hidden="true">`;
+    BOX.forEach((x,i)=>{s+=`<rect x="${x}" y="170" width="160" height="200" rx="14" fill="${conn?'#e6f0f5':'none'}" stroke="${conn?C.petroleo:C.mudo}" stroke-width="2.5" ${conn?'':'stroke-dasharray="8 7"'}/>`;});
+    // máquina 1 · CLP
+    s+=`<rect x="40" y="215" width="120" height="86" rx="8" fill="${C.petroleo}"/><circle cx="62" cy="236" r="5" fill="${C.laranja}" class="led"/><circle cx="82" cy="236" r="5" fill="#7fd1a1" class="led"/><circle cx="102" cy="236" r="5" fill="${C.laranjaC}" class="led"/><text x="100" y="282" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="15">CLP</text>`;
+    // máquina 2 · braço
+    s+=`<rect x="288" y="318" width="64" height="18" rx="4" fill="${C.petroleo}"/><g class="arm1" transform="rotate(-20 320 318)"><line x1="320" y1="318" x2="320" y2="258" stroke="${C.azul}" stroke-width="12" stroke-linecap="round"/><g class="arm2" transform="rotate(30 320 258)"><line x1="320" y1="258" x2="370" y2="258" stroke="${C.laranja}" stroke-width="10" stroke-linecap="round"/><circle cx="374" cy="258" r="9" fill="${C.petroleo}"/></g></g>`;
+    // máquina 3 · embalagem
+    s+=`<rect x="440" y="290" width="120" height="30" rx="6" fill="${C.petroleo}"/><rect class="pk" x="450" y="250" width="34" height="34" rx="4" fill="${C.laranja}"/><rect x="440" y="320" width="120" height="8" rx="4" fill="${C.azul}"/>`;
+    ['ilha 1','ilha 2','ilha 3'].forEach((t,i)=>s+=`<text x="${BOX[i]+80}" y="392" text-anchor="middle" fill="${C.mudo}" font-family="IBM Plex Mono" font-size="13" letter-spacing="1">${conn?['estoque','processo','expedição'][i]:t}</text>`);
+    if(conn){
+      s+=`<circle cx="300" cy="62" r="46" fill="${C.laranja}"/><text x="300" y="58" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque" font-weight="700" font-size="17">dados</text><text x="300" y="76" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="11">plataforma</text>`;
+      ['M100 170 C100 110 230 96 262 84','M300 170 V108','M500 170 C500 110 370 96 338 84'].forEach((d,i)=>s+=`<path class="lk" d="${d}" fill="none" stroke="${C.laranja}" stroke-width="4" stroke-linecap="round"/><circle class="pls" r="6" fill="#fff" stroke="${C.laranja}" stroke-width="3"/>`);
+    }else{
+      [200,400].forEach(x=>s+=`<text x="${x}" y="280" text-anchor="middle" fill="${C.alerta}" font-size="30" font-weight="700">✕</text>`);
+      s+=`<text x="300" y="70" text-anchor="middle" fill="${C.mudo}" font-family="IBM Plex Mono" font-size="14">cada máquina fala sozinha</text>`;
+    }
+    return s+'</svg>';
+  };
+  const gears=()=>`<svg viewBox="0 0 600 420" aria-hidden="true"><g class="g1" transform="translate(180 270)"><path d="${gearPath(74,12,18)}" fill="${C.petroleo}"/><circle r="24" fill="${C.papel}"/></g><g class="g2" transform="translate(326 214)"><path d="${gearPath(46,8,14)}" fill="${C.laranja}"/><circle r="16" fill="${C.papel}"/></g><rect x="400" y="236" width="170" height="104" rx="44" fill="${C.azul}"/><rect x="510" y="160" width="26" height="86" fill="${C.petroleo}"/>${[0,1,2,3].map(i=>`<circle class="sm" cx="523" cy="150" r="${14+i*5}" fill="#8fa6b0"/>`).join('')}<line x1="40" y1="352" x2="580" y2="352" stroke="${C.tinta}" stroke-width="3"/></svg>`;
+  const belt=()=>`<svg viewBox="0 0 600 420" aria-hidden="true"><rect x="30" y="316" width="540" height="18" rx="9" fill="${C.petroleo}"/>${Array.from({length:10},(_,i)=>`<circle class="rl" cx="${55+i*54}" cy="352" r="12" fill="${C.azul}"/>`).join('')}${Array.from({length:6},(_,i)=>`<rect class="bx" y="268" width="56" height="44" rx="5" fill="${i%2?C.laranja:C.laranjaC}"/>`).join('')}<polygon class="bolt" points="470,40 420,130 458,130 436,200 520,100 478,100 500,40" fill="${C.ouro}" stroke="${C.tinta}" stroke-width="2"/></svg>`;
+  const names=['Transparência','Visualização','Apoio à decisão','Autonomia'];
+  const stairs=()=>{let s=`<svg viewBox="0 0 600 440" aria-hidden="true">`;names.forEach((n,i)=>{const h=70*(i+1),x=24+i*142,y=400-h;s+=`<rect x="${x}" y="${y}" width="132" height="${h}" rx="8" fill="${[C.azul,C.petroleo,'#c8641a',C.laranja][i]}" opacity=".95"/><text x="${x+66}" y="${y+26}" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="12.5" font-weight="500">${n}</text><text x="${x+66}" y="${y+h-12}" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque" font-weight="800" font-size="26" opacity=".7">${i+1}</text>`;});return s+`<circle id="stairDot" r="13" fill="#fff" stroke="${C.laranja}" stroke-width="5"/></svg>`;};
+  arts[0].innerHTML=gears();arts[1].innerHTML=belt();arts[2].innerHTML=islands(false);arts[3].innerHTML=islands(true);arts[4].innerHTML=stairs();
+  const A=arts.map(a=>a.firstElementChild);
+  const g1=$('.g1',A[0]),g2=$('.g2',A[0]),sm=$$('.sm',A[0]),bx=$$('.bx',A[1]),rl=$$('.rl',A[1]),bolt=$('.bolt',A[1]);
+  const lk=$$('.lk',A[3]),pls=$$('.pls',A[3]);lk.forEach(l=>{l._len=l.getTotalLength();l.style.strokeDasharray=l._len;});
+  const dot=$('#stairDot'),stairTops=names.map((_,i)=>[24+i*142+66,400-70*(i+1)-8]);
+  S.s2.up=p=>{
+    const pos=ease(seg(p,.04,.96))*4;
+    track.style.transform=`translateX(${-pos*100}vw)`;
+    rail.forEach((r,i)=>r.classList.toggle('on',Math.round(pos)===i));
+    g1.setAttribute('transform',`translate(180 270) rotate(${pos*160+T*6})`);
+    g2.setAttribute('transform',`translate(326 214) rotate(${-pos*160*74/46-T*6*74/46+14})`);
+    sm.forEach((c,i)=>{const ph=((T*.35+i/4+pos*.4)%1);c.setAttribute('cy',150-ph*110);c.setAttribute('opacity',(1-ph)*.55);c.setAttribute('cx',523+Math.sin(ph*5+i)*8);});
+    bx.forEach((b,i)=>b.setAttribute('x',((i*100+pos*280+T*10)%640)-50));
+    rl.forEach((r,i)=>r.setAttribute('r',12+Math.sin(pos*9+T*2+i)*1.2));
+    bolt.setAttribute('opacity',Math.sin(T*6)*Math.sin(T*3.7)>-.3?1:.35);
+    // ilhas e rede
+    [2,3].forEach(k=>{const a=A[k];const a1=$('.arm1',a),a2=$('.arm2',a),pk=$('.pk',a);
+      a1.setAttribute('transform',`rotate(${-20+Math.sin(pos*5+T*1.5)*22} 320 318)`);a2.setAttribute('transform',`rotate(${30+Math.sin(pos*7+T*2)*28} 320 258)`);
+      pk.setAttribute('x',450+((pos*40+T*20)%70));
+      $$('.led',a).forEach((l,i)=>l.setAttribute('opacity',Math.sin(T*4+i*2)>0?1:.35));});
+    const u3=clamp(pos-2.2,0,1);
+    lk.forEach((l,i)=>{const u=seg(u3,i*.12,.6+i*.12);l.style.strokeDashoffset=l._len*(1-u);const ph=(T*.5+i*.33)%1;const pt=l.getPointAtLength(l._len*ph);pls[i].setAttribute('cx',pt.x);pls[i].setAttribute('cy',pt.y);pls[i].setAttribute('opacity',u>.95?1:0);});
+    const u4=seg(pos,3.3,4);const f=u4*3;const i=Math.min(2,Math.floor(f)),t=f-i;
+    const a=stairTops[i],b=stairTops[Math.min(3,i+1)];dot.setAttribute('cx',lerp(a[0],b[0],ease(t)));dot.setAttribute('cy',lerp(a[1],b[1],ease(t))-Math.sin(t*Math.PI)*30);
+  };
+}
+
+/* ═══════════════ CENA 3 · BOI 039 ═══════════════ */
+{
+  const svg=$('#svg3'),world=$('#world');
+  const stopTxt=[
+    {k:'Parada 1 de 5 · Identificação individual (IoT / RFID)',h:'O Boi 039 nasce digital.',p:'O brinco eletrônico dá ao animal um número e um histórico sanitário. Nada de erro de digitação.'},
+    {k:'Parada 2 de 5 · Balança conectada',h:'Cada pesagem vira dado.',p:'O peso entra sozinho no histórico: ganho de peso e movimentação de lote, sem planilha.'},
+    {k:'Parada 3 de 5 · Monitoramento espacial',h:'O satélite confere a origem.',p:'A propriedade é cruzada com imagens orbitais. O lote vindo de área embargada ou de desmatamento ilegal fica de fora.'},
+    {k:'Parada 4 de 5 · Integração com o frigorífico',h:'A fábrica já sabe quem chegou.',p:'O frigorífico recebe o dado do produtor e o liga ao controle industrial (SIF). A cadeia deixa de ser uma caixa-preta.'},
+    {k:'Parada 5 de 5 · Mercado externo',h:'Do pasto ao prato, sem pontos cegos.',p:'O comprador lê o QR e vê a história inteira do animal. Rastreabilidade é o passaporte de mercado.'}];
+  // — fundo e chão
+  let w='';
+  [[400,300,380,120],[1300,260,520,160],[2300,180,420,90],[3300,300,500,130],[4300,260,520,140],[5000,320,400,110]].forEach(([cx,cy,rx,ry])=>{[0,1,2].forEach(k=>w+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx+k*60}" ry="${ry+k*28}" fill="none" stroke="rgba(11,28,38,.10)" stroke-width="2"/>`);});
+  w+=`<rect x="-300" y="616" width="3500" height="500" fill="#c5d3c6"/><line x1="-300" y1="616" x2="3200" y2="616" stroke="#8fa89a" stroke-width="3"/>`;
+  for(let i=0;i<46;i++){const x=-100+i*70+(i*37%23);w+=`<path d="M${x} 640 l-6 -22 M${x} 640 l0 -28 M${x} 640 l6 -22" stroke="#7d9a88" stroke-width="3" fill="none" stroke-linecap="round"/>`;}
+  // parada 0
+  w+=`<g id="st0"><ellipse cx="400" cy="620" rx="230" ry="14" fill="rgba(11,28,38,.18)"/><use href="#cow" x="180" y="330" width="440" height="286" style="color:#8c8272"/>`;
+  [30,54,78].forEach((r,i)=>w+=`<circle class="wave" cx="528" cy="419" r="${r}" fill="none" stroke="${C.laranja}" stroke-width="4"/>`);
+  w+=`<circle cx="528" cy="419" r="16" fill="none" stroke="${C.ouro}" stroke-width="4"/>
+  <g class="card0"><path d="M540 410 L680 390" stroke="${C.tinta}" stroke-width="2" stroke-dasharray="5 5"/><g transform="translate(16 64)"><rect x="664" y="236" width="316" height="196" rx="14" fill="#fff" stroke="rgba(11,28,38,.2)" stroke-width="2"/>
+  <text x="684" y="266" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.6" fill="${C.laranja}">BRINCO ELETRÔNICO · RFID</text>
+  <text class="r0" x="684" y="304" font-family="Bricolage Grotesque" font-weight="800" font-size="30" fill="${C.tinta}">BR 076 000 039</text>
+  <text class="r1" x="684" y="338" font-family="IBM Plex Sans" font-size="17" fill="${C.mudo}">Nascimento · 03/2023</text>
+  <text class="r2" x="684" y="366" font-family="IBM Plex Sans" font-size="17" fill="${C.mudo}">Vacinas · em dia ✔</text>
+  <text class="r3" x="684" y="394" font-family="IBM Plex Sans" font-size="17" fill="${C.mudo}">Lote A-12 · Tocantins</text>
+  <text x="684" y="418" font-family="IBM Plex Mono" font-size="10.5" fill="#7a8b94">exemplo ilustrativo</text></g></g></g>`;
+  // parada 1
+  w+=`<g id="st1"><ellipse cx="1245" cy="598" rx="250" ry="12" fill="rgba(11,28,38,.18)"/><use href="#cow" x="1075" y="335" width="340" height="221" style="color:#8c8272"/>
+  <rect x="1030" y="556" width="440" height="32" rx="8" fill="${C.petroleo}"/><rect x="1050" y="588" width="16" height="22" fill="${C.tinta}"/><rect x="1434" y="588" width="16" height="22" fill="${C.tinta}"/>
+  <g class="card1"><rect x="1510" y="330" width="270" height="226" rx="16" fill="${C.noite}"/><text x="1534" y="362" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.6" fill="${C.laranjaC}">BALANÇA · PESO</text>
+  <text class="wt" x="1534" y="418" font-family="Bricolage Grotesque" font-weight="800" font-size="52" fill="#fff">380 kg</text>
+  <polyline class="spark" fill="none" stroke="${C.laranja}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points=""/>
+  <text x="1534" y="540" font-family="IBM Plex Mono" font-size="11" fill="#8fa6b0">ganho de peso · sincronizado ✔</text></g></g>`;
+  // parada 2 · satélite
+  const FX=1930,FY=170,TW=180,TH=140,GAP=10;
+  w+=`<g id="st2"><rect x="1900" y="120" width="1200" height="680" rx="22" fill="#0a1d14" stroke="${C.noite}" stroke-width="6"/>
+  <text x="1930" y="152" font-family="IBM Plex Mono" font-size="14" letter-spacing="2" fill="#8fd1a6">IMAGEM ORBITAL · EXEMPLO ILUSTRATIVO</text>`;
+  const greens=['#2f6b3f','#3a7a48','#27593a','#4a8a50'];
+  for(let r=0;r<4;r++)for(let c=0;c<6;c++){const x=FX+c*(TW+GAP),y=FY+10+r*(TH+GAP)-0;const emb=(c===4&&r===0);w+=`<rect x="${x}" y="${y}" width="${TW}" height="${TH}" rx="6" fill="${emb?'#6e2a24':greens[(r*3+c*2)%4]}"/>`;if(emb)for(let k=-TH;k<TW;k+=18)w+=`<line x1="${x+Math.max(0,k)}" y1="${y+Math.max(0,-k)}" x2="${x+Math.min(TW,k+TH)}" y2="${y+Math.min(TH,TW-k)}" stroke="#ff8a7e" stroke-width="3" opacity=".6"/>`;}
+  w+=`<rect x="2115" y="330" width="570" height="300" fill="none" stroke="${C.laranja}" stroke-width="5" stroke-dasharray="14 9"/><text x="2125" y="322" font-family="IBM Plex Mono" font-size="14" letter-spacing="1.5" fill="${C.laranjaC}">FAZENDA · PROPRIEDADE</text>
+  <text x="2700" y="472" font-family="IBM Plex Mono" font-size="13" fill="#ffb3a8" letter-spacing="1">ÁREA EMBARGADA</text>
+  <g class="gate039"><circle cx="2400" cy="480" r="20" fill="${C.ouro}" stroke="#fff" stroke-width="4"/><circle class="okring" cx="2400" cy="480" r="44" fill="none" stroke="#7fd1a1" stroke-width="5"/><text x="2400" y="486" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600" font-size="14" fill="${C.tinta}">039</text></g>
+  <g class="gateX"><circle class="dotx" cx="2780" cy="400" r="18" fill="#bfc9c5" stroke="#fff" stroke-width="3"/><text class="xmark" x="2780" y="408" text-anchor="middle" font-size="26" font-weight="700" fill="${C.alerta}">✕</text></g>
+  <line class="scan" x1="1900" x2="3100" y1="170" y2="170" stroke="#7fd1a1" stroke-width="3" opacity=".6"/>
+  <g class="chk"><rect x="2720" y="560" width="350" height="210" rx="12" fill="rgba(7,20,28,.88)" stroke="#2d5a44" stroke-width="2"/><text x="2740" y="590" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.6" fill="#8fd1a6">CHECAGEM DE ORIGEM</text>
+  <text class="ck0" x="2740" y="630" font-family="IBM Plex Sans" font-size="17" fill="#fff">✔ Área embargada: não</text><text class="ck1" x="2740" y="668" font-family="IBM Plex Sans" font-size="17" fill="#fff">✔ Desmatamento ilegal: não</text><text class="ck2" x="2740" y="706" font-family="IBM Plex Sans" font-size="17" fill="#fff">✔ Origem da propriedade: ok</text><text class="ck3" x="2740" y="748" font-family="IBM Plex Mono" font-size="12" fill="#ffb3a8">lote vizinho: bloqueado ✕</text></g></g>`;
+  // parada 3 · caminhão e frigorífico
+  w+=`<g id="st3"><rect x="2950" y="620" width="1300" height="10" fill="#7e8f8b"/><g stroke="#e9eeea" stroke-width="3" stroke-dasharray="26 22"><line x1="2950" y1="625" x2="4250" y2="625"/></g>
+  <g class="truck"><rect x="0" y="470" width="190" height="112" rx="8" fill="${C.petroleo}"/><text x="95" y="518" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#fff">LOTE A-12</text><text x="95" y="542" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="${C.laranjaC}">com o 039</text><path d="M196 508 h46 q18 0 26 18 l12 30 v26 h-84 Z" fill="${C.laranja}"/><rect x="212" y="518" width="34" height="26" fill="#cfe4ee"/><circle cx="50" cy="592" r="22" fill="${C.tinta}"/><circle cx="130" cy="592" r="22" fill="${C.tinta}"/><circle cx="236" cy="592" r="22" fill="${C.tinta}"/><circle cx="50" cy="592" r="8" fill="#9fb2ba"/><circle cx="130" cy="592" r="8" fill="#9fb2ba"/><circle cx="236" cy="592" r="8" fill="#9fb2ba"/></g>
+  <g class="fab"><rect x="3660" y="380" width="340" height="240" fill="#cfd9d3" stroke="${C.tinta}" stroke-width="3"/><polygon points="3660,380 3660,330 3740,380 3740,330 3820,380 3820,330 3900,380 3900,330 3980,380" fill="#b8c5bd" stroke="${C.tinta}" stroke-width="3"/><rect x="3940" y="290" width="40" height="100" fill="#8fa09a" stroke="${C.tinta}" stroke-width="3"/>
+  <rect x="3700" y="500" width="70" height="120" fill="${C.petroleo}"/><circle cx="3880" cy="470" r="40" fill="none" stroke="${C.alerta}" stroke-width="6"/><text x="3880" y="480" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="26" fill="${C.alerta}">SIF</text>
+  <rect class="ok3" x="3690" y="420" width="190" height="50" rx="10" fill="#dff0e5" stroke="${C.verde}" stroke-width="2"/><text class="ok3t" x="3785" y="451" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="${C.verde}">dado do produtor ✔</text></g>
+  <path class="link3" d="M3400 480 C3480 380 3600 330 3700 350" fill="none" stroke="${C.laranja}" stroke-width="4" stroke-dasharray="10 8"/><circle class="pk3" r="7" fill="#fff" stroke="${C.laranja}" stroke-width="3"/></g>`;
+  // parada 4 · globo, prato, QR
+  const GX=4380,GY=430,GR=220;let dots='';
+  for(let la=-80;la<=80;la+=8){const rr=Math.cos(la*Math.PI/180);const n=Math.max(1,Math.round(30*rr));for(let k=0;k<n;k++){const lo=((k/n)*180-90)*Math.PI/180*1;const x=GX+GR*rr*Math.sin(lo),y=GY-GR*Math.sin(la*Math.PI/180);const land=Math.sin(la*.09+lo*2.4)+Math.cos(la*.15-lo*1.7)>.55;const sz=1.2+1.9*Math.cos(lo)*rr;dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${sz.toFixed(1)}" fill="${land?'#7fd1a1':'#3b6f87'}" opacity="${land?.95:.6}"/>`;}}
+  const proj=(la,lo)=>{la*=Math.PI/180;lo*=Math.PI/180;return [GX+GR*Math.cos(la)*Math.sin(lo),GY-GR*Math.sin(la)];};
+  const pBR=proj(-10,-22),pDS=proj(38,56);const mid=[(pBR[0]+pDS[0])/2,(pBR[1]+pDS[1])/2];const ctrl=[GX+(mid[0]-GX)*1.55,GY+(mid[1]-GY)*1.55];
+  w+=`<g id="st4"><circle cx="${GX}" cy="${GY}" r="${GR+14}" fill="${C.noite}"/>${dots}
+  <path class="route" d="M${pBR[0]} ${pBR[1]} Q${ctrl[0]} ${ctrl[1]} ${pDS[0]} ${pDS[1]}" fill="none" stroke="${C.laranja}" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="${pBR[0]}" cy="${pBR[1]}" r="9" fill="${C.laranja}"/><text x="${pBR[0]-14}" y="${pBR[1]+34}" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#fff" letter-spacing="1">TOCANTINS</text>
+  <circle cx="${pDS[0]}" cy="${pDS[1]}" r="9" fill="${C.ouro}"/><text x="${pDS[0]+8}" y="${pDS[1]-20}" font-family="IBM Plex Mono" font-size="14" fill="#fff" letter-spacing="1" text-anchor="middle">COMPRADOR</text>
+  <circle cx="4960" cy="430" r="168" fill="#fff" stroke="${C.tinta}" stroke-width="5"/><circle cx="4960" cy="430" r="140" fill="none" stroke="rgba(11,28,38,.2)" stroke-width="2"/><g id="qr"></g>
+  <line class="qscan" x1="4880" x2="5040" y1="360" y2="360" stroke="${C.laranja}" stroke-width="4"/>
+  <g class="tl"><text x="5170" y="300" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.6" fill="${C.laranja}">HISTÓRICO DO BOI 039</text>
+  ${['Nascimento e brinco RFID','Pesagens e ganho de peso','Origem sem embargo','Frigorífico · SIF','Destino · comprador'].map((t,i)=>`<g class="ti${i}"><circle cx="5176" cy="${338+i*42}" r="7" fill="${C.verde}"/><text x="5196" y="${344+i*42}" font-family="IBM Plex Sans" font-size="17" fill="${C.tinta}">${t}</text></g>`).join('')}</g></g>`;
+  // fio de dados
+  const ANC=[[528,419],[1250,520],[2400,480],[3700,600],[4960,430]];
+  const segs=[];
+  for(let i=0;i<4;i++)segs.push(smooth(ANC[i],ANC[i+1]));
+  segs.forEach((d,i)=>w+=`<path class="th" d="${d}" fill="none" stroke="${C.laranja}" stroke-width="6" stroke-linecap="round" style="filter:drop-shadow(0 0 5px rgba(232,93,18,.6))"/>`);
+  w+=`<circle id="tdot" r="12" fill="#fff" stroke="${C.laranja}" stroke-width="6"/>`;
+  world.innerHTML=w;
+  // QR code
+  { const qr=$('#qr',world);const N=21,cs=7,x0=4960-N*cs/2,y0=430-N*cs/2;let s='';const fin=(r,c)=>{const f=(a,b)=>a<7&&b<7||a<7&&b>=N-7||a>=N-7&&b<7;return f(r,c);};
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){let on;if(fin(r,c)){const rr=r%(N-7+0>14?1:1);const a=r<7?r:r-(N-7),b=c<7?c:c-(N-7);on=(a===0||a===6||b===0||b===6||(a>=2&&a<=4&&b>=2&&b<=4));}else on=rnd()>.52;if(on)s+=`<rect x="${x0+c*cs}" y="${y0+r*cs}" width="${cs}" height="${cs}" fill="${C.tinta}"/>`;}
+    qr.innerHTML=s;}
+  const $w=s=>$(s,world), $$w=s=>$$(s,world);
+  const th=$$w('.th');th.forEach(t=>{t._len=t.getTotalLength();t.style.strokeDasharray=t._len;t.style.strokeDashoffset=t._len;});
+  const tdot=$w('#tdot');
+  const waves=$$w('.wave'),card0=$w('.card0'),r0=[0,1,2,3].map(i=>$w('.r'+i)),card1=$w('.card1'),wt=$w('.wt'),spark=$w('.spark');
+  const scan=$w('.scan'),gate=$w('.gate039'),okring=$w('.okring'),gx=$w('.gateX'),dotx=$w('.dotx'),xmark=$w('.xmark'),chk=$w('.chk'),cks=[0,1,2,3].map(i=>$w('.ck'+i));
+  const truck=$w('.truck'),pk3=$w('.pk3'),link3=$w('.link3');link3._len=link3.getTotalLength();
+  const ok3=[$w('.ok3'),$w('.ok3t')];
+  const route=$w('.route');route._len=route.getTotalLength();route.style.strokeDasharray=route._len;
+  const tl=[0,1,2,3,4].map(i=>$w('.ti'+i)),qscan=$w('.qscan');
+  const PK=[.07,.27,.47,.67,.88];
+  const CAM=[[640,500,1.7],[1400,500,1.7],[2500,500,1.05],[3450,540,1.25],[4800,510,1.12]];
+  const stopProg=p=>{if(p<=PK[0])return 0;if(p>=PK[4])return 4;let i=0;while(p>PK[i+1])i++;return i+ease(seg(p,PK[i]+.05,PK[i+1]-.05));};
+  const stopsEl=$('#stops');for(let i=0;i<5;i++)stopsEl.appendChild(document.createElement('b'));
+  const cap=$('#cap3'),ck=$('#c3k'),ch=$('#c3h'),cp=$('#c3p');let shown=-1,swapT=null;
+  const setText=i=>{cap.classList.add('out');clearTimeout(swapT);swapT=setTimeout(()=>{const t=stopTxt[i];ck.textContent=t.k;ch.textContent=t.h;cp.textContent=t.p;cap.classList.remove('out');},RM?0:240);};
+  S.s3.up=p=>{
+    const sp=stopProg(p),i=Math.min(3,Math.floor(sp)),t=sp-i;
+    const a=CAM[i],b=CAM[Math.min(4,i+1)];
+    const z=Math.exp(lerp(Math.log(a[2]),Math.log(b[2]),t)),cx=lerp(a[0],b[0],t),cy=lerp(a[1],b[1],t);
+    world.setAttribute('transform',`translate(800 450) scale(${z.toFixed(4)}) translate(${(-cx).toFixed(1)} ${(-cy).toFixed(1)})`);
+    $('#stage3').style.backgroundPosition=`${(-cx*z*.25).toFixed(0)}px ${(-cy*z*.1).toFixed(0)}px,${(-cx*z*.25).toFixed(0)}px ${(-cy*z*.1).toFixed(0)}px`;
+    const near=Math.round(sp);if(near!==shown){shown=near;setText(near);$$('#stops b').forEach((b,k)=>b.classList.toggle('on',k<=near));}
+    const A=k=>seg(p,PK[k]-.04,PK[k]+.09);
+    // fio
+    th.forEach((s,k)=>s.style.strokeDashoffset=s._len*(1-clamp(sp-k)));
+    const k=clamp(Math.ceil(sp)-1,0,3),u=clamp(sp-k);const pt=th[k].getPointAtLength(th[k]._len*u);tdot.setAttribute('cx',pt.x);tdot.setAttribute('cy',pt.y);
+    // 0
+    const a0=A(0);waves.forEach((w,j)=>{const ph=(T*.9-j*.25)%1;w.setAttribute('opacity',a0*(1-((ph+1)%1))*.9);});
+    card0.style.opacity=seg(a0,.15,.5);r0.forEach((r,j)=>r.style.opacity=seg(a0,.3+j*.15,.45+j*.15));
+    // 1
+    const a1=A(1);card1.style.opacity=seg(a1,0,.3);wt.textContent=Math.round(lerp(380,412,easeOut(seg(a1,.1,.9))))+' kg';
+    let pts='';for(let j=0;j<=10;j++){const x=1534+j*21.5,y=500-(Math.log(1+j*1.1)/Math.log(12))*50;if(j/10<=seg(a1,.1,.9))pts+=`${x.toFixed(1)},${(y-30).toFixed(1)} `;}spark.setAttribute('points',pts);
+    // 2
+    const a2=A(2);scan.setAttribute('y1',170+(((T*.28)%1)*620));scan.setAttribute('y2',170+(((T*.28)%1)*620));scan.style.opacity=a2>0?.7:0;
+    gate.style.opacity=seg(a2,0,.2);okring.setAttribute('r',44+Math.sin(T*3)*4);okring.setAttribute('opacity',seg(a2,.3,.5));
+    const mv=seg(a2,.35,.7),bk=seg(a2,.7,.9);const xx=2780-90*easeOut(mv)+90*0*bk-(bk?20*Math.sin(bk*Math.PI):0);dotx.setAttribute('cx',lerp(2780,2692,easeOut(mv))+bk*88);dotx.setAttribute('cy',400);xmark.setAttribute('x',lerp(2780,2692,easeOut(mv))+bk*88);xmark.setAttribute('opacity',seg(a2,.7,.8));gx.style.opacity=seg(a2,.2,.4);
+    chk.style.opacity=seg(a2,.3,.5);cks.forEach((c,j)=>c.style.opacity=seg(a2,.4+j*.12,.5+j*.12));
+    // 3
+    const a3=A(3),tr=easeOut(seg(a3,0,.6));truck.setAttribute('transform',`translate(${lerp(2900,3350,tr)} 0)`);
+    const ph3=(T*.6)%1;const q=link3.getPointAtLength(link3._len*ph3);pk3.setAttribute('cx',q.x);pk3.setAttribute('cy',q.y);pk3.setAttribute('opacity',seg(a3,.5,.7));link3.style.opacity=seg(a3,.5,.7);
+    ok3.forEach(o=>o.style.opacity=seg(a3,.7,.95));
+    // 4
+    const a4=A(4);route.style.strokeDashoffset=route._len*(1-easeOut(seg(a4,0,.45)));
+    qscan.setAttribute('y1',360+((seg(a4,.3,.8)*2)%1)*140);qscan.setAttribute('y2',360+((seg(a4,.3,.8)*2)%1)*140);qscan.style.opacity=a4>.3&&a4<.95?1:0;
+    tl.forEach((g,j)=>{g.style.opacity=seg(a4,.5+j*.1,.62+j*.1);});
+  };
+  svg.style.overflow='visible';
+}
+
+/* ═══════════════ CENA 3b · ILHA 4.0 ═══════════════ */
+{
+  const svg=$('#svgI');
+  const farms=[[240,170],[420,300],[230,430],[420,560]];
+  let s='';
+  s+=`<g id="factory"><rect x="1080" y="380" width="380" height="300" fill="#16384a" stroke="${C.laranja}" stroke-width="3"/><polygon points="1080,380 1080,320 1170,380 1170,320 1260,380 1260,320 1350,380 1350,320 1440,380 1440,320 1460,380" fill="#1d4d66" stroke="${C.laranja}" stroke-width="3"/><rect x="1400" y="230" width="46" height="120" fill="#16384a" stroke="${C.laranja}" stroke-width="3"/>
+  ${[0,1,2,3,4,5].map(i=>`<rect class="win" x="${1110+(i%3)*110}" y="${430+Math.floor(i/3)*90}" width="70" height="50" fill="${C.laranjaC}"/>`).join('')}
+  <circle cx="1270" cy="610" r="0"/><text x="1270" y="720" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" letter-spacing="2" fill="${C.laranjaC}">FRIGORÍFICO · SIF · TI + TO</text></g>
+  <g id="stat"><rect id="statbg" x="1130" y="170" width="280" height="44" rx="10" fill="${C.alerta}"/><text id="stattxt" x="1270" y="198" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" letter-spacing="1" fill="#fff">AGUARDANDO DADOS DO CAMPO</text></g>`;
+  farms.forEach((f,i)=>{s+=`<g class="farm" data-i="${i}"><path d="M${f[0]-60} ${f[1]+40} h120 v-56 l-60 -40 l-60 40 z" fill="#1a3140" stroke="#4a6272" stroke-width="3"/><rect class="fl" x="${f[0]-18}" y="${f[1]+4}" width="36" height="36" fill="#2a4252"/>
+  <g class="sheet"><rect x="${f[0]+70}" y="${f[1]-30}" width="46" height="58" rx="3" fill="#cfd9d3" opacity=".75"/><path d="M${f[0]+80} ${f[1]-14}h26M${f[0]+80} ${f[1]}h26M${f[0]+80} ${f[1]+14}h18" stroke="#6b7c85" stroke-width="3"/></g>
+  <text class="ftx" x="${f[0]}" y="${f[1]+74}" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" letter-spacing="1" fill="#6b8190">produtor ${i+1} · no papel</text></g>`;});
+  const ends=[[1080,470],[1080,520],[1080,570],[1080,620]];
+  farms.forEach((f,i)=>{const d=`M${f[0]+120} ${f[1]+10} C${f[0]+400} ${f[1]+10} ${900} ${ends[i][1]} ${ends[i][0]} ${ends[i][1]}`;s+=`<path class="bridge" d="${d}" fill="none" stroke="${C.laranja}" stroke-width="5" stroke-linecap="round" style="filter:drop-shadow(0 0 5px ${C.laranja})"/><circle class="bp" r="7" fill="#fff" stroke="${C.laranja}" stroke-width="3"/>`;});
+  svg.innerHTML=s;
+  const br=$$('.bridge',svg),bp=$$('.bp',svg),fm=$$('.farm',svg),win=$$('.win',svg),st=$('#statbg'),stt=$('#stattxt'),sheets=$$('.sheet',svg),ftx=$$('.ftx',svg),fls=$$('.fl',svg),stopFac=$('#factory');
+  br.forEach(b=>{b._len=b.getTotalLength();b.style.strokeDasharray=b._len;b.style.strokeDashoffset=b._len;});
+  const cap=$('#capI'),h=$('#ciH'),pp=$('#ciP');let m=-1;
+  const txt=[['A ilha 4.0 acende, o campo continua no escuro.','Se o fornecedor opera no papel e sem padrão de dados, a cadeia trava no primeiro elo.'],['Integração horizontal: cada elo passa a falar o mesmo idioma.','Produtor, logística, indústria e cliente trocam dados padronizados. Aí sim a cadeia inteira enxerga.']];
+  S.s3b.up=p=>{
+    const u=seg(p,.28,.85);
+    br.forEach((b,i)=>{const k=seg(u,i*.18,.5+i*.18);b.style.strokeDashoffset=b._len*(1-easeOut(k));const pt=b.getPointAtLength(b._len*((T*.4+i*.25)%1));bp[i].setAttribute('cx',pt.x);bp[i].setAttribute('cy',pt.y);bp[i].setAttribute('opacity',k>.98?1:0);
+      const on=k>.98;fm[i].style.opacity=on?1:.75;sheets[i].style.opacity=on?0:1;ftx[i].textContent=on?`produtor ${i+1} · conectado`:`produtor ${i+1} · no papel`;ftx[i].setAttribute('fill',on?C.laranjaC:'#6b8190');fls[i].setAttribute('fill',on?C.laranjaC:'#2a4252');});
+    const all=u>.95;st.setAttribute('fill',all?C.verde:C.alerta);stt.textContent=all?'CADEIA COMPLETA · RASTREÁVEL':(Math.sin(T*5)>0?'AGUARDANDO DADOS DO CAMPO':'AGUARDANDO DADOS DO CAMPO ');
+    win.forEach((w,i)=>w.setAttribute('opacity',.7+.3*Math.sin(T*2+i)));
+    const mm=p<.4?0:1;if(mm!==m){m=mm;cap.classList.add('out');setTimeout(()=>{h.textContent=txt[mm][0];pp.textContent=txt[mm][1];cap.classList.remove('out');},RM?0:240);}
+  };
+  h.textContent=txt[0][0];pp.textContent=txt[0][1];
+}
+
+/* ═══════════════ CENA 4 · SERVITIZAÇÃO (canvas) ═══════════════ */
+{
+  const cv=$('#cv4'),g=cv.getContext('2d');let W=0,H=0,dpr=1;
+  const COLS=36,ROWS=18,N=COLS*ROWS;
+  let parts=[],layer=0,hot=0;
+  const heat=(c,r,l)=>{const o=l?2.1:0;const v=.5+.5*Math.sin(c*.33+1.1+o)*Math.cos(r*.55+.4+o)+.28*Math.sin(c*.8+r*.7+o*2);return clamp(v*.78,0,1);};
+  const hcol=v=>{const a=hexToRgb('#3e9a5d'),b=hexToRgb('#f2c230'),c=hexToRgb('#d8451e');return v<.5?mix(a,b,v*2):mix(b,c,(v-.5)*2);};
+  const tractor=(x)=>{x.fillStyle='#000';const rr=(a,b,c,d,r)=>{x.beginPath();x.roundRect(a,b,c,d,r);x.fill();};
+    rr(112,100,172,58,12);rr(60,38,104,106,10);rr(250,56,12,50,3);rr(140,150,132,26,6);
+    x.beginPath();x.arc(98,172,64,0,7);x.fill();x.beginPath();x.arc(268,192,38,0,7);x.fill();
+    x.globalCompositeOperation='destination-out';rr(74,52,76,56,6);x.beginPath();x.arc(98,172,26,0,7);x.fill();x.beginPath();x.arc(268,192,14,0,7);x.fill();x.globalCompositeOperation='source-over';};
+  const build=()=>{
+    const off=document.createElement('canvas');off.width=380;off.height=250;const x=off.getContext('2d');tractor(x);
+    const d=x.getImageData(0,0,380,250).data,pts=[];const st=4;
+    for(let y=0;y<250;y+=st)for(let xx=0;xx<380;xx+=st)if(d[(y*380+xx)*4+3]>128)pts.push([xx,y]);
+    // sorteia N pontos
+    const pick=[];const r=(()=>{let s=7;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;}})();
+    for(let i=0;i<N;i++)pick.push(pts[Math.floor(r()*pts.length)]);
+    parts=pick.map((p,i)=>({sx:p[0]/380,sy:p[1]/250,c:i%COLS,r:Math.floor(i/COLS),d:0}));
+    // atribui alvos preservando varredura esquerda→direita
+    parts.sort((a,b)=>a.sx-b.sx||a.sy-b.sy);
+    const cells=[];for(let r2=0;r2<ROWS;r2++)for(let c=0;c<COLS;c++)cells.push([c,r2]);
+    cells.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    parts.forEach((p,i)=>{p.c=cells[i][0];p.r=cells[i][1];p.d=clamp(p.sx*.45+(r()*.25),0,.7);p.h0=heat(p.c,p.r,0);p.h1=heat(p.c,p.r,1);});
+    let mx=-1;parts.forEach(p=>{const v=Math.max(p.h0,p.h1);if(v>mx){mx=v;}});
+  };
+  const size=()=>{const r=cv.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;g.setTransform(dpr,0,0,dpr,0,0);};
+  const tcol=hexToRgb(C.petroleo);
+  let P=0;
+  const draw=()=>{
+    g.clearRect(0,0,W,H);
+    const gw=Math.min(W*.96,H*COLS/ROWS*.96),cw=gw/COLS,ch=cw,gh=ch*ROWS,gx=(W-gw)/2,gy=(H-gh)/2;
+    const scale=Math.min(W*.58/380,H*.9/250),tx=W*.5-190*scale,ty=H*.5-125*scale;
+    const m=seg(P,.16,.58),col=ease(seg(P,.5,.7));
+    for(const p of parts){
+      const t=easeOut(clamp((m-p.d*.5)/(1-p.d*.5)));
+      const x0=tx+p.sx*380*scale,y0=ty+p.sy*250*scale;
+      const x1=gx+p.c*cw,y1=gy+p.r*ch;
+      const lift=Math.sin(t*Math.PI)*(30+p.d*60);
+      const x=lerp(x0,x1,t),y=lerp(y0,y1,t)-lift;
+      const sz=lerp(4*scale,cw-1.5,t);
+      g.fillStyle=mix(tcol,hexToRgb('#7d6f5a'),0)||'#000';
+      const hv=layer?p.h1:p.h0;
+      g.fillStyle=t<.02?mix(tcol,tcol,0):mix(tcol,hexToRgb(hcolHex(hv)),col*t);
+      g.fillRect(x,y,sz,sz);
+    }
+    // quadrante crítico
+    if(P>.78){let best=null,bv=-1;for(const p of parts){const v=layer?p.h1:p.h0;if(v>bv){bv=v;best=p;}}
+      const a=seg(P,.78,.9);g.strokeStyle='#fff';g.lineWidth=3;g.globalAlpha=a;g.strokeRect(gx+best.c*cw-4,gy+best.r*ch-4,cw+8,ch+8);g.globalAlpha=1;
+      g.strokeStyle=C.tinta;g.lineWidth=1;g.globalAlpha=a;g.strokeRect(gx+best.c*cw-5,gy+best.r*ch-5,cw+10,ch+10);g.globalAlpha=1;}
+    // moldura do talhão
+    g.strokeStyle='rgba(11,28,38,.35)';g.lineWidth=1.5;g.globalAlpha=seg(P,.5,.7);g.strokeRect(gx-6,gy-6,gw+12,gh+12);g.globalAlpha=1;
+  };
+  const hcolHex=v=>{const a=hexToRgb('#3e9a5d'),b=hexToRgb('#f2c230'),c=hexToRgb('#d8451e');const q=v<.5?a.map((x,i)=>lerp(x,b[i],v*2)):b.map((x,i)=>lerp(x,c[i],(v-.5)*2));return '#'+q.map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');};
+  const pr0=$('#pr0'),pr1=$('#pr1'),rx=$('#rx'),cap=$('#cap4'),h=$('#c4h'),pp=$('#c4p');let ph=-1;
+  const txt=[['Antes: vende a máquina.','O produtor compra o equipamento e assume sozinho o risco de regulagem, desperdício de insumos e falhas de manejo.'],['O trator se dissolve no talhão.','O fabricante mapeia a lavoura e enxerga o campo em quadrantes, não como um bloco único.'],['Agora: vende hectare produtivo.','Detecta déficit de água e nitrogênio por quadrante e entrega uma prescrição de manejo orientada por dados.']];
+  S.s4.up=p=>{
+    P=p;if(!parts.length)return;draw();
+    pr0.style.opacity=p<.5?1:.35;pr1.style.opacity=p<.5?.35:1;pr0.classList.toggle('on',p<.5);pr1.classList.toggle('on',p>=.5);
+    rx.style.opacity=seg(p,.8,.92);rx.style.transform=`translateY(${(1-seg(p,.8,.92))*14}px)`;
+    const q=p<.2?0:p<.62?1:2;if(q!==ph){ph=q;cap.classList.add('out');setTimeout(()=>{h.textContent=txt[q][0];pp.textContent=txt[q][1];cap.classList.remove('out');},RM?0:240);}
+  };
+  $$('#layer button').forEach(b=>b.addEventListener('click',()=>{layer=+b.dataset.l;$$('#layer button').forEach(x=>x.classList.toggle('on',x===b));if(parts.length)draw();}));
+  S.s4.init=()=>{size();build();draw();};
+  addEventListener('resize',()=>{size();if(parts.length)draw();});
+  h.textContent=txt[0][0];pp.textContent=txt[0][1];
+}
+
+/* ═══════════════ CENA 5 · DECISÃO ═══════════════ */
+{
+  const viz=$('#viz'),fb=$('#fb'),opts=$$('.opt');
+  const fbTxt={
+    A:['bad','Cuidado (armadilha do IEDI): digitalizar um processo desorganizado só digitaliza a ineficiência. E sistemas dependentes de nuvem contínua falham onde o sinal oscila.'],
+    B:['good','Decisão consistente: primeiro estrutura-se o processo e prepara-se a equipe. A tecnologia se adapta à realidade (armazenamento local + sincronização) e gera indicadores confiáveis.'],
+    C:['bad','Risco competitivo: esperar a infraestrutura perfeita faz a empresa perder mercado para quem já comprova rastreabilidade e eficiência com soluções híbridas.']};
+  // fork inicial
+  let s=`<g id="fork"><path id="road" d="M30 250 H250" fill="none" stroke="${C.petroleo}" stroke-width="14" stroke-linecap="round"/>`;
+  [['A',90],['B',250],['C',410]].forEach(([k,y])=>{s+=`<path class="br" d="M250 250 C400 250 420 ${y} 600 ${y}" fill="none" stroke="${C.petroleo}" stroke-width="14" stroke-linecap="round" opacity=".5"/><circle class="bn" cx="650" cy="${y}" r="38" fill="${C.petroleo}"/><text x="650" y="${y+11}" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="34" fill="#fff">${k}</text>`;});
+  s+=`<text x="30" y="290" font-family="IBM Plex Mono" font-size="14" fill="${C.mudo}" letter-spacing="1">VOCÊ ESTÁ AQUI</text></g><g id="resA" style="display:none"></g><g id="resB" style="display:none"></g><g id="resC" style="display:none"></g>`;
+  viz.innerHTML=s;
+  const fork=$('#fork'),road=$('#road'),brs=$$('.br',viz),bns=$$('.bn',viz);
+  const mk=(id,html)=>{const g=$('#'+id,viz);g.innerHTML=html;return g;};
+  const nodes=(n,cls,r,cx0,cy0,sp,cols)=>Array.from({length:n},(_,i)=>`<circle class="${cls}" cx="${cx0+(i%cols)*sp}" cy="${cy0+Math.floor(i/cols)*sp}" r="${r}"/>`).join('');
+  // A
+  const gA=mk('resA',`<rect x="30" y="300" width="300" height="150" rx="10" fill="#9fb8a3"/>${[[80,350],[150,330],[220,360],[280,330],[120,410],[240,420]].map(([x,y],i)=>`<circle class="sA" cx="${x}" cy="${y}" r="10" fill="${C.laranja}"/>`).join('')}
+  <g transform="translate(70 200)">${[0,1,2,3].map(i=>`<rect class="sig" x="${i*16}" y="${40-i*12}" width="10" height="${i*12+8}" rx="2" fill="${C.mudo}"/>`).join('')}</g><text x="150" y="238" font-family="IBM Plex Mono" font-size="14" fill="${C.alerta}">sinal instável</text>
+  <path d="M520 150 q-50 0 -50 -40 q0 -40 50 -40 q20 -34 70 -20 q40 -24 80 10 q50 0 50 40 q0 50 -50 50 z" fill="${C.azul}" transform="translate(40 0)"/><text x="610" y="118" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" fill="#fff">nuvem</text>
+  ${Array.from({length:6},()=>`<circle class="pA" r="7" fill="${C.laranja}"/>`).join('')}
+  <g transform="translate(420 300)"><rect width="150" height="110" rx="8" fill="#fff" stroke="${C.mudo}" stroke-width="2"/>${[0,1,2,3].map(i=>`<path d="M12 ${26+i*22}h126" stroke="#c0cbd1" stroke-width="3"/>`).join('')}<text x="75" y="130" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="${C.mudo}">equipe ainda na planilha</text></g>
+  <text x="400" y="480" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" fill="${C.alerta}" letter-spacing="1">DADOS PERDIDOS · NADA CHEGA À NUVEM</text>`);
+  // B
+  const gB=mk('resB',`${['1 Padronizar o processo','2 Capacitar a equipe','3 Coleta offline + sync'].map((t,i)=>`<g class="stepB"><rect x="${20+i*262}" y="20" width="248" height="62" rx="12" fill="${C.petroleo}"/><text x="${144+i*262}" y="58" text-anchor="middle" font-family="IBM Plex Sans" font-weight="600" font-size="17" fill="#fff">${t}</text></g>`).join('')}
+  <rect x="40" y="170" width="300" height="190" rx="12" fill="#fff" stroke="${C.petroleo}" stroke-width="2.5"/><text x="56" y="196" font-family="IBM Plex Mono" font-size="13" fill="${C.mudo}" letter-spacing="1">MEMÓRIA LOCAL (FAZENDA)</text>${nodes(24,'mB',11,72,228,48,6).replace(/class="mB"/g,'class="mB" fill="'+C.laranja+'"')}
+  <g transform="translate(380 220)">${[0,1,2,3].map(i=>`<rect class="sigB" x="${i*16}" y="${40-i*12}" width="10" height="${i*12+8}" rx="2" fill="${C.mudo}"/>`).join('')}</g><text x="412" y="196" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="${C.mudo}" id="sigT">sem sinal</text>
+  <path d="M520 290 q-50 0 -50 -40 q0 -40 50 -40 q20 -34 70 -20 q40 -24 80 10 q50 0 50 40 q0 50 -50 50 z" fill="${C.azul}" transform="translate(40 0)"/><text x="610" y="258" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" fill="#fff">nuvem</text>
+  ${Array.from({length:8},()=>`<circle class="fB" r="7" fill="${C.verde}"/>`).join('')}
+  <text id="resT" x="400" y="440" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" fill="${C.verde}" letter-spacing="1">INDICADORES CONFIÁVEIS ✔</text>`);
+  // C
+  const gC=mk('resC',`<text x="40" y="120" font-family="IBM Plex Mono" font-size="14" fill="${C.mudo}" letter-spacing="1">CONCORRENTE (SOLUÇÃO HÍBRIDA)</text><rect x="40" y="136" width="720" height="38" rx="19" fill="#d3dcd6"/><rect id="cRiv" x="40" y="136" width="10" height="38" rx="19" fill="${C.alerta}"/>
+  <text x="40" y="240" font-family="IBM Plex Mono" font-size="14" fill="${C.mudo}" letter-spacing="1">SUA EMPRESA (AGUARDANDO 5G)</text><rect x="40" y="256" width="720" height="38" rx="19" fill="#d3dcd6"/><rect x="40" y="256" width="86" height="38" rx="19" fill="${C.mudo}"/>
+  <g transform="translate(400 390)"><circle r="46" fill="#fff" stroke="${C.tinta}" stroke-width="4"/><line id="clk" x1="0" y1="0" x2="0" y2="-34" stroke="${C.alerta}" stroke-width="5" stroke-linecap="round"/><circle r="5" fill="${C.tinta}"/></g>
+  <text id="cT" x="400" y="470" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" fill="${C.alerta}" letter-spacing="1">MERCADO PERDIDO PARA QUEM JÁ RASTREIA</text>`);
+  const sA=$$('.sA',gA),pA=$$('.pA',gA),sig=$$('.sig',gA),mB=$$('.mB',gB),sigB=$$('.sigB',gB),fB=$$('.fB',gB),stepB=$$('.stepB',gB),sigT=$('#sigT',gB),resT=$('#resT',gB),cRiv=$('#cRiv',gC),clk=$('#clk',gC),cT=$('#cT',gC);
+  let sel=null,t0=0;
+  const pick=o=>{
+    sel=o;t0=T;opts.forEach(b=>{const on=b.dataset.o===o;b.classList.toggle('sel',on);b.classList.toggle('good',on&&o==='B');b.classList.toggle('bad',on&&o!=='B');});
+    fork.style.display='none';[['A',gA],['B',gB],['C',gC]].forEach(([k,g])=>g.style.display=k===o?'':'none');
+    fb.className='fb '+fbTxt[o][0];fb.textContent=fbTxt[o][1];
+  };
+  opts.forEach(b=>b.addEventListener('click',()=>pick(b.dataset.o)));
+  addEventListener('keydown',e=>{if(!S.s5.active)return;const k={'1':'A','2':'B','3':'C'}[e.key];if(k)pick(k);});
+  S.s5.up=p=>{
+    const r=easeOut(seg(p,0,.35));road.style.strokeDasharray=220;road.style.strokeDashoffset=220*(1-r);
+    brs.forEach((b,i)=>{b.style.opacity=.5*seg(p,.2+i*.05,.4+i*.05);});bns.forEach((b,i)=>b.style.opacity=seg(p,.25+i*.05,.4+i*.05));
+    opts.forEach((o,i)=>{const k=seg(p,.05+i*.08,.2+i*.08);o.style.opacity=k;o.style.transform=`translateY(${(1-k)*16}px)`;});
+    if(!sel)return;
+    const t=T-t0;
+    if(sel==='A'){sA.forEach((c,i)=>c.setAttribute('r',10+Math.sin(T*4+i)*2.5));sig.forEach((b,i)=>b.setAttribute('fill',i===0&&Math.sin(T*6)>-.2?C.alerta:'#aab8bf'));
+      pA.forEach((c,i)=>{const ph=((t*.3+i/6)%1);const s=sA[i];const sx=+s.getAttribute('cx'),sy=+s.getAttribute('cy');if(ph<.42){const k=ph/.42;c.setAttribute('cx',lerp(sx,520,k));c.setAttribute('cy',lerp(sy,120,k)-Math.sin(k*3)*10);c.setAttribute('fill',C.laranja);c.setAttribute('opacity',1);}else{const k=(ph-.42)/.58;c.setAttribute('cx',lerp(sx,520,.42)+k*20);c.setAttribute('cy',lerp(sy,120,.42)+k*190);c.setAttribute('fill',C.alerta);c.setAttribute('opacity',1-k);}});}
+    if(sel==='B'){const cy=(t%8);stepB.forEach((g,i)=>g.style.opacity=seg(t,i*.5,i*.5+.5));
+      const acc=cy<4,sync=cy>=4&&cy<6;const n=acc?Math.floor(cy/4*24):24;const flushed=sync?Math.floor((cy-4)/2*24):(cy>=6?24:0);
+      mB.forEach((c,i)=>c.setAttribute('opacity',cy>=6?0:(i<n&&i>=flushed)?1:.15));
+      const bars=sync?4:(acc?0:4);sigB.forEach((b,i)=>b.setAttribute('fill',i<bars?C.verde:'#aab8bf'));sigT.textContent=sync?'sinal voltou':'sem sinal';sigT.setAttribute('fill',sync?C.verde:C.mudo);
+      fB.forEach((c,i)=>{if(!sync){c.setAttribute('opacity',0);return;}const ph=(((cy-4)/2*2+i/8)%1);c.setAttribute('cx',lerp(340,520,ph));c.setAttribute('cy',lerp(260,270,ph)-Math.sin(ph*Math.PI)*30);c.setAttribute('opacity',1);});
+      resT.style.opacity=cy>=5?1:0;}
+    if(sel==='C'){const k=(t%7)/6;cRiv.setAttribute('width',10+710*clamp(k));cRiv.setAttribute('fill',k>.9?C.alerta:'#d9822b');clk.setAttribute('transform',`rotate(${t*90})`);cT.style.opacity=k>.85?1:.15;}
+  };
+}
+
+/* ═══════════════ CENA 6 · PILARES ═══════════════ */
+{
+  const roof=$('#roof'),cols=[$('#col0'),$('#col1'),$('#col2')];
+  const v0=$('#v0'),v1=$('#v1'),v2=$('#v2');
+  // 1 · processo
+  const pts=Array.from({length:9},(_,i)=>({x:20+i*32.5,j:(rnd()-.5)*110}));
+  v0.innerHTML=`<polyline id="pl" fill="none" stroke="${C.petroleo}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map(()=>`<circle class="pn" r="6" fill="${C.laranja}"/>`).join('')}<text x="20" y="140" font-family="IBM Plex Mono" font-size="10" fill="${C.mudo}" id="plT"></text>`;
+  const pl=$('#pl',v0),pn=$$('.pn',v0),plT=$('#plT',v0);
+  // 2 · escudo
+  v1.innerHTML=`<path d="M215 20 l56 18 v52 q0 34 -56 54 q-56 -20 -56 -54 v-52 z" fill="${C.petroleo}"/><path d="M196 78 l14 14 l28 -30" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>${Array.from({length:7},()=>`<circle class="pk" r="6" fill="${C.alerta}"/>`).join('')}<text x="20" y="144" font-family="IBM Plex Mono" font-size="10" fill="${C.mudo}">TI + TO · tentativas bloqueadas</text>`;
+  const pk=$$('.pk',v1);
+  // 3 · pessoas
+  v2.innerHTML=`${['digitar','copiar','conferir'].map((t,i)=>`<g class="tk"><rect x="${20}" y="${24+i*38}" width="92" height="28" rx="6" fill="#d3dcd6"/><text x="66" y="${43+i*38}" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="${C.mudo}">${t}</text></g>`).join('')}
+  <g class="pp"><circle cx="150" cy="56" r="22" fill="${C.petroleo}"/><path d="M108 130 q0 -48 42 -48 q42 0 42 48 z" fill="${C.petroleo}"/></g>
+  ${['analisa','supervisiona','decide'].map((t,i)=>`<g class="sk"><text x="210" y="${34+i*26}" font-family="IBM Plex Mono" font-size="10.5" fill="${C.laranja}" font-weight="600">${t}</text></g>`).join('')}`;
+  const tk=$$('.tk',v2),pp=$('.pp',v2),sk=$$('.sk',v2);
+  S.s6.up=p=>{
+    cols.forEach((c,i)=>{const k=easeOut(seg(p,.05+i*.2,.28+i*.2));c.style.opacity=k;c.style.transform=`translateY(${(1-k)*40}px)`;});
+    const rk=easeOut(seg(p,.72,.9));roof.style.opacity=rk;roof.style.transform=`translateY(${(1-rk)*-50}px)`;
+    // processo
+    const u0=seg(p,.1,.4);let s='';pts.forEach((q,i)=>{const y=75+q.j*(1-ease(u0));s+=`${q.x},${y} `;pn[i].setAttribute('cx',q.x);pn[i].setAttribute('cy',y);pn[i].setAttribute('opacity',.4+.6*u0);});pl.setAttribute('points',s);plT.textContent=u0>.9?'registro padronizado → indicador confiável':'registro solto, sem padrão';
+    // ciber
+    pk.forEach((c,i)=>{const ph=((T*.45+i/7)%1);const x=ph<.62?lerp(10,152,ph/.62):lerp(152,100,(ph-.62)/.38);const y=30+((i*53)%100)+ (ph>=.62?-(ph-.62)*50:0);c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('opacity',ph<.62?1:1-(ph-.62)/.38);});
+    // pessoas
+    const u2=seg(p,.5,.78);tk.forEach((g,i)=>{const k=seg(u2,i*.15,.5+i*.15);g.style.transform=`translateX(${-k*140}px)`;g.style.opacity=1-k;});
+    pp.style.transformOrigin='150px 100px';pp.style.transformBox='fill-box';pp.style.transform=`scale(${1+.18*u2})`;sk.forEach((g,i)=>g.style.opacity=seg(u2,.4+i*.18,.6+i*.18));
+  };
+}
+
+/* quiz */
+$$('.qcard').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('open')));
+
+/* ═══════════════ CENA 7 · RETORNO ═══════════════ */
+{
+  const items=['Brinco 039','Satélite','QR · SIF','Hectare','TI + TO','Pessoas'];
+  const orb=$('#orbit');orb.innerHTML=items.map(t=>`<div class="it">${t}</div>`).join('');
+  const its=$$('.it',orb),ring=$('#ringc'),big=$('#big39b'),sub=$('#s7sub'),qt=$('#quote');
+  const Q='"A Indústria 4.0 não começa pela tecnologia que compramos. Começa pelo problema de gestão que precisamos resolver."';
+  let lastSub='';
+  S.s7.up=p=>{
+    const R=Math.min(innerWidth,innerHeight*1.5)*.27*easeOut(seg(p,0,.35));
+    its.forEach((e,i)=>{const a=(i/items.length)*Math.PI*2+p*Math.PI*1.2-Math.PI/2;e.style.left=Math.cos(a)*R*1.2+'px';e.style.top=Math.sin(a)*R*.9+'px';e.style.opacity=seg(p,.05+i*.03,.25+i*.03);});
+    ring.setAttribute('stroke-dashoffset',1194*(1-easeOut(seg(p,.25,.7))));
+    big.style.transform=`scale(${lerp(1.25,.8,easeOut(seg(p,0,.4)))})`;
+    const s=p<.5?'dado isolado':'contexto + cadeia + pessoas';if(s!==lastSub){lastSub=s;sub.textContent=s;}
+    const n=Math.round(Q.length*seg(p,.62,.95));qt.textContent=Q.slice(0,n);
+  };
+}
+
+/* ═══════════════ MOTOR: scroll → progresso ═══════════════ */
+const hudEl=$('#hud'),thr=$('#thread'),thrU=$('u',thr),dotsEl=$('#dots');
+let VH=innerHeight,DOCH=0;
+const layout=()=>{VH=innerHeight;scenes.forEach(s=>{const r=s.el.getBoundingClientRect();s.top=r.top+scrollY;if(s.h)s.el.style.height=(s.h*VH/100)+'px';});scenes.forEach(s=>{s.top=s.el.offsetTop;s.hh=s.el.offsetHeight;s.range=Math.max(1,s.hh-(s.flow?0:VH));});DOCH=document.documentElement.scrollHeight;
+  // nós do fio
+  $$('s',thr).forEach(n=>n.remove());scenes.forEach(s=>{const n=document.createElement('s');n.style.top=(s.top/(DOCH-VH)*(VH-48))+'px';s._node=n;thr.appendChild(n);});};
+scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.title=(i+1)+' · '+s.name;b.addEventListener('click',()=>scrollTo({top:s.top,behavior:RM?'auto':'smooth'}));dotsEl.appendChild(b);s._dot=b;});
+let cur=scrollY,active=-1,noteOn=false;
+const notes=$('#notes');
+const renderNotes=()=>{const s=scenes[Math.max(0,active)];notes.innerHTML=`<b>${s.name} · ${s.time}</b><p>${s.note}</p><div class="keys">→ ↓ espaço: próxima batida · ← ↑: anterior · P: notas · F: tela cheia · 1 2 3: opções da cena de decisão</div>`;};
+const frame=()=>{
+  const target=scrollY,d=target-cur;cur=(RM||Math.abs(d)<.4)?target:cur+d*.16;
+  T=performance.now()/1000;
+  let a=0;scenes.forEach((s,i)=>{if(cur+VH*.5>=s.top)a=i;});
+  scenes.forEach((s,i)=>{
+    const vis=cur+VH>s.top&&cur<s.top+s.hh;
+    s.active=i===a;
+    if(!vis)return;
+    const p=s.flow?0:clamp((cur-s.top)/s.range);s.p=p;s.up(p);
+  });
+  if(a!==active){active=a;scenes.forEach((s,i)=>{s._dot.classList.toggle('on',i===a);s._node&&s._node.classList.toggle('done',i<=a);});const d=scenes[a].dark;hudEl.classList.toggle('dark',!!d);thr.classList.toggle('dark',!!d);if(noteOn)renderNotes();}
+  thrU.style.height=(cur/(DOCH-VH)*(VH-48))+'px';
+  requestAnimationFrame(frame);
+};
+/* navegação por batidas */
+const beats=()=>{const arr=[];scenes.forEach(s=>s.beats.forEach(f=>arr.push(Math.round(s.top+f*(s.flow?0:s.range)))));return[...new Set(arr)].sort((a,b)=>a-b);};
+function goTo(s,f){scrollTo({top:s.top+f*s.range,behavior:RM?'auto':'smooth'});}
+window.goTo=goTo;
+const step=dir=>{const b=beats(),y=scrollY;if(dir>0){const n=b.find(v=>v>y+12);scrollTo({top:n??DOCH,behavior:RM?'auto':'smooth'});}else{const n=[...b].reverse().find(v=>v<y-12);scrollTo({top:n??0,behavior:RM?'auto':'smooth'});}};
+addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,textarea'))return;
+  if(['ArrowRight','ArrowDown','PageDown'].includes(e.key)||(e.key===' '&&!e.shiftKey&&e.target===document.body)){e.preventDefault();step(1);}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)||(e.key===' '&&e.shiftKey)){e.preventDefault();step(-1);}
+  else if(e.key==='p'||e.key==='P'){togNotes();}
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.().catch(()=>{});}
+  else if(e.key==='Home'){scrollTo({top:0});}
+});
+const togNotes=()=>{noteOn=!noteOn;notes.hidden=!noteOn;if(noteOn)renderNotes();};
+$('#notesBtn').addEventListener('click',togNotes);
+/* cronômetro */
+{let sec=0,run=false,iv=null;const tm=$('#timer');tm.addEventListener('click',()=>{if(run){clearInterval(iv);run=false;tm.style.opacity='.7';}else{run=true;tm.style.opacity='1';iv=setInterval(()=>{sec++;tm.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');},1000);}});}
+addEventListener('resize',()=>{layout();});
+const boot=()=>{layout();S.s4.init&&S.s4.init();requestAnimationFrame(frame);};
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{layout();});
+boot();
+setTimeout(layout,400);
+})();
+</script>
